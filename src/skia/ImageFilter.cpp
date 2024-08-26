@@ -491,7 +491,8 @@ imagefilters
             and output.
         )docstring",
         py::arg("sigmaX"), py::arg("sigmaY"),
-        py::arg("tileMode") = SkTileMode::kDecal, py::arg("input") = nullptr,
+        py::arg_v("tileMode", SkTileMode::kDecal, "skia.TileMode.kDecal"),
+        py::arg("input") = nullptr,
         py::arg("cropRect") = nullptr)
     .def_static("ColorFilter",
         [] (const SkColorFilter& cf, const SkImageFilter* input,
@@ -632,7 +633,7 @@ imagefilters
         :filterQuality: The filter quality that is used when sampling the image.
         )docstring",
         py::arg("image"), py::arg("srcRect"), py::arg("dstRect"),
-        py::arg("options") = SkSamplingOptions())
+        py::arg_v("options", SkSamplingOptions(), "skia.SamplingOptions()"))
     .def_static("Image",
         [] (const SkImage& image, const SkSamplingOptions& options) {
             return SkImageFilters::Image(CloneImage(image), options);
@@ -642,7 +643,8 @@ imagefilters
 
         :image: The image that is output by the filter.
         )docstring",
-        py::arg("image"), py::arg("options") = SkSamplingOptions())
+        py::arg("image"),
+        py::arg_v("options", SkSamplingOptions(), "skia.SamplingOptions()"))
     .def_static("Magnifier",
             [] (const SkRect& srcRect, SkScalar zoomAmount, SkScalar inset,
             const SkSamplingOptions& sampling,

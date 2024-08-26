@@ -261,7 +261,8 @@ gradientshader
         :param localMatrix: Local matrix
         )docstring",
         py::arg("points"), py::arg("colors"), py::arg("positions") = nullptr,
-        py::arg("mode") = SkTileMode::kClamp, py::arg("flags") = 0,
+        py::arg_v("mode", SkTileMode::kClamp, "skia.TileMode.kClamp"),
+        py::arg("flags") = 0,
         py::arg("localMatrix") = nullptr)
     .def_static("MakeRadial",
         [] (const SkPoint& center, SkScalar radius,
@@ -293,7 +294,8 @@ gradientshader
         :param localMatrix: Local matrix
         )docstring",
         py::arg("center"), py::arg("radius"), py::arg("colors"),
-        py::arg("positions") = nullptr, py::arg("mode") = SkTileMode::kClamp,
+        py::arg("positions") = nullptr,
+        py::arg_v("mode", SkTileMode::kClamp, "skia.TileMode.kClamp"),
         py::arg("flags") = 0, py::arg("localMatrix") = nullptr)
     .def_static("MakeTwoPointConical",
         [] (const SkPoint& start, SkScalar startRadius, const SkPoint& end,
@@ -317,7 +319,8 @@ gradientshader
         )docstring",
         py::arg("start"), py::arg("startRadius"), py::arg("end"),
         py::arg("endRadius"), py::arg("colors"), py::arg("positions") = nullptr,
-        py::arg("mode") = SkTileMode::kClamp, py::arg("flags") = 0,
+        py::arg_v("mode", SkTileMode::kClamp, "skia.TileMode.kClamp"),
+        py::arg("flags") = 0,
         py::arg("localMatrix") = nullptr)
     .def_static("MakeSweep",
         [] (SkScalar cx, SkScalar cy, const std::vector<SkColor>& colors,
@@ -339,7 +342,8 @@ gradientshader
         http://dev.w3.org/html5/2dcontext/#dom-context-2d-createradialgradient
         )docstring",
         py::arg("cx"), py::arg("cy"), py::arg("colors"),
-        py::arg("positions") = nullptr, py::arg("mode") = SkTileMode::kClamp,
+        py::arg("positions") = nullptr,
+        py::arg_v("mode", SkTileMode::kClamp, "skia.TileMode.kClamp"),
         py::arg("startAngle") = 0, py::arg("endAngle") = 360,
         py::arg("flags") = 0, py::arg("localMatrix") = nullptr)
     ;

@@ -125,7 +125,7 @@ textblob
         :param skia.TextEncoding encoding: text encoding used in the text array
         )docstring",
         py::arg("text"), py::arg("font"), py::arg("positions") = nullptr,
-        py::arg("encoding") = SkTextEncoding::kUTF8)
+        py::arg_v("encoding", SkTextEncoding::kUTF8, "skia.TextEncoding.kUTF8"))
     .def("__iter__",
         [] (const SkTextBlob& textblob) { return SkTextBlob::Iter(textblob); },
         py::keep_alive<0, 1>())
@@ -233,7 +233,7 @@ textblob
         :return: :py:class:`TextBlob` constructed from one run
         )docstring",
         py::arg("text"), py::arg("font"),
-        py::arg("encoding") = SkTextEncoding::kUTF8)
+        py::arg_v("encoding", SkTextEncoding::kUTF8, "skia.TextEncoding.kUTF8"))
     .def_static("MakeFromString",
         [] (const std::string& string, const SkFont& font,
             SkTextEncoding encoding) {
@@ -262,7 +262,7 @@ textblob
         :return: :py:class:`TextBlob` constructed from one run
         )docstring",
         py::arg("string"), py::arg("font"),
-        py::arg("encoding") = SkTextEncoding::kUTF8)
+        py::arg_v("encoding", SkTextEncoding::kUTF8, "skia.TextEncoding.kUTF8"))
     .def_static("MakeFromShapedText",
         [] (const std::string& utf8text, const SkFont& font,
             bool leftToRight) {
@@ -317,7 +317,7 @@ textblob
         :return: new textblob or nullptr
         )docstring",
         py::arg("text"), py::arg("xpos"), py::arg("constY"), py::arg("font"),
-        py::arg("encoding") = SkTextEncoding::kUTF8)
+        py::arg_v("encoding", SkTextEncoding::kUTF8, "skia.TextEncoding.kUTF8"))
     .def_static("MakeFromPosText",
         [] (const std::string& text, const std::vector<SkPoint>& pos,
             const SkFont& font, SkTextEncoding encoding) {
@@ -345,7 +345,7 @@ textblob
         :return: new textblob or nullptr
         )docstring",
         py::arg("text"), py::arg("pos"), py::arg("font"),
-        py::arg("encoding") = SkTextEncoding::kUTF8)
+        py::arg_v("encoding", SkTextEncoding::kUTF8, "skia.TextEncoding.kUTF8"))
     .def_static("MakeFromRSXform",
         [] (const std::string& text, const std::vector<SkRSXform>& xform,
             const SkFont& font, SkTextEncoding encoding) {
@@ -357,7 +357,7 @@ textblob
                 text.c_str(), text.size(), &xform[0], font, encoding);
         },
         py::arg("text"), py::arg("xform"), py::arg("font"),
-        py::arg("encoding") = SkTextEncoding::kUTF8)
+        py::arg_v("encoding", SkTextEncoding::kUTF8, "skia.TextEncoding.kUTF8"))
     .def_static("Deserialize",
         [] (py::buffer b) {
             auto info = b.request();
@@ -431,7 +431,7 @@ textblobbuilder
         )docstring",
         py::arg("text"), py::arg("font"), py::arg("x"), py::arg("y"),
         py::arg("bounds") = nullptr,
-        py::arg("encoding") = SkTextEncoding::kUTF8)
+        py::arg_v("encoding", SkTextEncoding::kUTF8, "skia.TextEncoding.kUTF8"))
     .def("allocRunPosH",
         [] (SkTextBlobBuilder& builder, const SkFont& font,
             const std::vector<SkGlyphID>& glyphs, py::iterable xpos,
