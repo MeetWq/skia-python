@@ -52,8 +52,7 @@ SkPDF::Metadata DictToMetadata(py::dict dict) {
 
 }
 
-void initDocument(py::module &m) {
-
+void initDocumentDeclarations(py::module &m) {
 py::class_<SkDocument, sk_sp<SkDocument>, SkRefCnt>(m, "Document",
     R"docstring(
     High-level API for creating a document-based canvas.
@@ -76,61 +75,9 @@ py::class_<SkDocument, sk_sp<SkDocument>, SkRefCnt>(m, "Document",
             with document.page(480, 640) as canvas:
                 draw(canvas)
 
-    )docstring")
-    .def("__enter__",
-        [] (const SkDocument* document) { return document; })
-    .def("__exit__",
-        [] (SkDocument* document, py::object exc_type, py::object exc_value,
-            py::object traceback) { document->close(); })
-    .def("page",
-        [] (SkDocument* document, SkScalar width, SkScalar height) {
-            return PyAutoDocumentPage(document, width, height);
-        },
-        py::arg("width"), py::arg("height"), py::keep_alive<0, 1>())
-    .def("beginPage", &SkDocument::beginPage,
-        R"docstring(
-        Begin a new page for the document, returning the canvas that will draw
-        into the page.
+    )docstring");
 
-        The document owns this canvas, and it will go out of scope when
-        :py:meth:`endPage` or :py:meth:`close` is called, or the document is
-        deleted.
-        )docstring",
-        py::arg("width"), py::arg("height"), py::arg("content") = nullptr,
-        py::return_value_policy::reference_internal)
-    .def("endPage", &SkDocument::endPage,
-        R"docstring(
-        Call :py:meth:`endPage` when the content for the current page has been
-        drawn (into the canvas returned by :py:meth:`beginPage`).
-
-        After this call the canvas returned by :py:meth:`beginPage` will be
-        out-of-scope.
-        )docstring")
-    .def("close", &SkDocument::close,
-        R"docstring(
-        Call :py:meth:`close` when all pages have been drawn.
-
-        This will close the file or stream holding the document's contents.
-        After :py:meth:`close` the document can no longer add new pages.
-        Deleting the document will automatically call :py:meth:`close` if need
-        be.
-        )docstring")
-    .def("abort", &SkDocument::abort,
-        R"docstring(
-        Call :py:meth:`abort` to stop producing the document immediately.
-
-        The stream output must be ignored, and should not be trusted.
-        )docstring")
-    ;
-
-py::class_<PyAutoDocumentPage>(m, "_AutoDocumentPage")
-    .def("__enter__",
-        [] (PyAutoDocumentPage& page) { return page.beginPage(); },
-        py::return_value_policy::reference_internal)
-    .def("__exit__",
-        [] (PyAutoDocumentPage& page, py::object exc_type, py::object exc_value,
-            py::object traceback) { page.endPage(); })
-    ;
+py::class_<PyAutoDocumentPage>(m, "_AutoDocumentPage");
 
 py::class_<PyPDF> pdf(m, "PDF");
 
@@ -188,7 +135,88 @@ py::enum_<SkPDF::DocumentStructureType>(pdf, "DocumentStructureType")
     .export_values();
 */
 
-py::class_<SkPDF::AttributeList>(pdf, "AttributeList")
+py::class_<SkPDF::AttributeList>(pdf, "AttributeList");
+
+py::class_<SkPDF::StructureElementNode>(pdf, "StructureElementNode",
+    R"docstring(
+    A node in a PDF structure tree, giving a semantic representation
+    of the content.  Each node ID is associated with content
+    by passing the :py:class:`Canvas` and node ID to :py:class:`PDF.SetNodeId`
+    when drawing. NodeIDs should be unique within each tree.
+    )docstring");
+
+py::class_<SkPDF::Metadata>(pdf, "Metadata",
+    R"docstring(
+    Optional metadata to be passed into the PDF factory function.
+    )docstring");
+}
+
+void initDocumentDefinitions(py::module &m) {
+auto document = static_cast<py::class_<SkDocument, sk_sp<SkDocument>, SkRefCnt>>(
+    m.attr("Document"));
+document
+    .def("__enter__",
+        [] (const SkDocument* document) { return document; })
+    .def("__exit__",
+        [] (SkDocument* document, py::object exc_type, py::object exc_value,
+            py::object traceback) { document->close(); })
+    .def("page",
+        [] (SkDocument* document, SkScalar width, SkScalar height) {
+            return PyAutoDocumentPage(document, width, height);
+        },
+        py::arg("width"), py::arg("height"), py::keep_alive<0, 1>())
+    .def("beginPage", &SkDocument::beginPage,
+        R"docstring(
+        Begin a new page for the document, returning the canvas that will draw
+        into the page.
+
+        The document owns this canvas, and it will go out of scope when
+        :py:meth:`endPage` or :py:meth:`close` is called, or the document is
+        deleted.
+        )docstring",
+        py::arg("width"), py::arg("height"), py::arg("content") = nullptr,
+        py::return_value_policy::reference_internal)
+    .def("endPage", &SkDocument::endPage,
+        R"docstring(
+        Call :py:meth:`endPage` when the content for the current page has been
+        drawn (into the canvas returned by :py:meth:`beginPage`).
+
+        After this call the canvas returned by :py:meth:`beginPage` will be
+        out-of-scope.
+        )docstring")
+    .def("close", &SkDocument::close,
+        R"docstring(
+        Call :py:meth:`close` when all pages have been drawn.
+
+        This will close the file or stream holding the document's contents.
+        After :py:meth:`close` the document can no longer add new pages.
+        Deleting the document will automatically call :py:meth:`close` if need
+        be.
+        )docstring")
+    .def("abort", &SkDocument::abort,
+        R"docstring(
+        Call :py:meth:`abort` to stop producing the document immediately.
+
+        The stream output must be ignored, and should not be trusted.
+        )docstring")
+    ;
+
+auto _autodocumentpage = static_cast<py::class_<PyAutoDocumentPage>>(
+    m.attr("_AutoDocumentPage"));
+_autodocumentpage
+    .def("__enter__",
+        [] (PyAutoDocumentPage& page) { return page.beginPage(); },
+        py::return_value_policy::reference_internal)
+    .def("__exit__",
+        [] (PyAutoDocumentPage& page, py::object exc_type, py::object exc_value,
+            py::object traceback) { page.endPage(); })
+    ;
+
+auto pdf = static_cast<py::class_<PyPDF>>(m.attr("PDF"));
+
+auto attributelist = static_cast<py::class_<SkPDF::AttributeList>>(
+    pdf.attr("AttributeList"));
+attributelist
     .def(py::init<>())
     .def("appendInt", &SkPDF::AttributeList::appendInt,
         py::arg("owner"), py::arg("name"), py::arg("value"))
@@ -202,13 +230,9 @@ py::class_<SkPDF::AttributeList>(pdf, "AttributeList")
         py::arg("owner"), py::arg("name"), py::arg("value"))
     ;
 
-py::class_<SkPDF::StructureElementNode>(pdf, "StructureElementNode",
-    R"docstring(
-    A node in a PDF structure tree, giving a semantic representation
-    of the content.  Each node ID is associated with content
-    by passing the :py:class:`Canvas` and node ID to :py:class:`PDF.SetNodeId`
-    when drawing. NodeIDs should be unique within each tree.
-    )docstring")
+auto structureelementnode = static_cast<py::class_<SkPDF::StructureElementNode>>(
+    pdf.attr("StructureElementNode"));
+structureelementnode
     .def(py::init<>())
     .def_readwrite("fTypeString",
         &SkPDF::StructureElementNode::fTypeString)
@@ -226,10 +250,8 @@ py::class_<SkPDF::StructureElementNode>(pdf, "StructureElementNode",
         &SkPDF::StructureElementNode::fLang)
     ;
 
-py::class_<SkPDF::Metadata>(pdf, "Metadata",
-    R"docstring(
-    Optional metadata to be passed into the PDF factory function.
-    )docstring")
+auto metadata = static_cast<py::class_<SkPDF::Metadata>>(pdf.attr("Metadata"));
+metadata
     .def(py::init<>())
     .def(py::init(&DictToMetadata))
     .def_readwrite("fTitle", &SkPDF::Metadata::fTitle,

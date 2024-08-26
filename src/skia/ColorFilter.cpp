@@ -31,7 +31,7 @@ void CopyTableIfValid(py::object obj, std::vector<uint8_t>* table) {
 
 }  // namespace
 
-void initColorFilter(py::module &m) {
+void initColorFilterDeclarations(py::module &m) {
 py::class_<SkColorFilter, sk_sp<SkColorFilter>, SkFlattenable> colorfilter(
     m, "ColorFilter",
     R"docstring(
@@ -63,6 +63,80 @@ py::enum_<SkColorFilter::Flags>(colorfilter, "Flags", py::arithmetic())
     .export_values();
 */
 
+py::class_<SkColorMatrix>(m, "ColorMatrix");
+
+py::class_<SkColorFilters>(m, "ColorFilters");
+
+py::class_<SkColorMatrixFilter, sk_sp<SkColorMatrixFilter>, SkColorFilter>(
+    m, "ColorMatrixFilter");
+
+py::class_<SkHighContrastConfig> highcontrastconfig(m, "HighContrastConfig",
+    R"docstring(
+    Configuration struct for :py:class:`HighContrastFilter`.
+
+    Provides transformations to improve contrast for users with low vision.
+    )docstring");
+
+py::enum_<SkHighContrastConfig::InvertStyle>(highcontrastconfig, "InvertStyle")
+    .value("kNoInvert",
+        SkHighContrastConfig::InvertStyle::kNoInvert)
+    .value("kInvertBrightness",
+        SkHighContrastConfig::InvertStyle::kInvertBrightness)
+    .value("kInvertLightness",
+        SkHighContrastConfig::InvertStyle::kInvertLightness)
+    .value("kLast",
+        SkHighContrastConfig::InvertStyle::kLast)
+    .export_values();
+
+py::class_<SkHighContrastFilter>(m, "HighContrastFilter",
+    R"docstring(
+    Color filter that provides transformations to improve contrast for users
+    with low vision.
+
+    Applies the following transformations in this order. Each of these can be
+    configured using :py:class:`HighContrastConfig`.
+
+     - Conversion to grayscale
+     - Color inversion (either in RGB or HSL space)
+     - Increasing the resulting contrast.
+
+    Calling :py:meth:`HighContrastFilter.Make` will return nullptr if the config
+    is not valid, e.g. if you try to call it with a contrast outside the range
+    of -1.0 to 1.0.
+    )docstring");
+
+py::class_<SkLumaColorFilter>(
+    m, "LumaColorFilter", R"docstring(
+    :py:class:`LumaColorFilter` multiplies the luma of its input into the alpha
+    channel, and sets the red, green, and blue channels to zero.
+
+    :py:class:`LumaColorFilter` (r,g,b,a) = {0,0,0, a * luma(r,g,b)}
+
+    This is similar to a luminanceToAlpha feColorMatrix, but note how this
+    filter folds in the previous alpha, something an feColorMatrix cannot do.
+
+    feColorMatrix(luminanceToAlpha; r,g,b,a) = {0,0,0, luma(r,g,b)}
+
+    (Despite its name, an feColorMatrix using luminanceToAlpha does actually
+    compute luma, a dot-product of gamma-encoded color channels, not luminance,
+    a dot-product of linear color channels. So at least
+    :py:class:`LumaColorFilter` and feColorMatrix+luminanceToAlpha agree there.)
+    )docstring");
+
+py::class_<SkOverdrawColorFilter>(
+    m, "OverdrawColorFilter", R"docstring(
+    Uses the value in the src alpha channel to set the dst pixel.
+
+    0 -> colors[0] 1 -> colors[1] ... 5 (or larger) -> colors[5]
+    )docstring");
+
+/* SkTableColorFilter class removed in m116 */
+py::class_<std::unique_ptr<uint8_t>>(m, "TableColorFilter");
+}
+
+void initColorFilterDefinitions(py::module &m) {
+auto colorfilter = static_cast<py::class_<SkColorFilter, sk_sp<SkColorFilter>,
+    SkFlattenable>>(m.attr("ColorFilter"));
 colorfilter
     .def("asColorMode", &ColorFilterAsAColorMode)
     .def("asAColorMode", &ColorFilterAsAColorMode,
@@ -129,12 +203,14 @@ colorfilter
         py::arg("data"))
     ;
 
-py::class_<SkColorMatrix>(m, "ColorMatrix")
+auto colormatrix = static_cast<py::class_<SkColorMatrix>>(m.attr("ColorMatrix"));
+colormatrix
     .def(py::init<>())
     // TODO: Implement me!
     ;
 
-py::class_<SkColorFilters>(m, "ColorFilters")
+auto colorfilters = static_cast<py::class_<SkColorFilters>>(m.attr("ColorFilters"));
+colorfilters
     .def_static("Compose",
         [] (const SkColorFilter& outer, const SkColorFilter& inner) {
             return SkColorFilters::Compose(
@@ -182,8 +258,9 @@ py::class_<SkColorFilters>(m, "ColorFilters")
         py::arg("t"), py::arg("dst"), py::arg("src"))
     ;
 
-py::class_<SkColorMatrixFilter, sk_sp<SkColorMatrixFilter>, SkColorFilter>(
-    m, "ColorMatrixFilter")
+auto colormatrixfilter = static_cast<py::class_<SkColorMatrixFilter,
+    sk_sp<SkColorMatrixFilter>, SkColorFilter>>(m.attr("ColorMatrixFilter"));
+colormatrixfilter
     .def_static("MakeLightingFilter", &SkColorMatrixFilter::MakeLightingFilter,
         R"docstring(
         Create a colorfilter that multiplies the RGB channels by one color, and
@@ -195,24 +272,8 @@ py::class_<SkColorMatrixFilter, sk_sp<SkColorMatrixFilter>, SkColorFilter>(
         py::arg("mul"), py::arg("add"))
     ;
 
-py::class_<SkHighContrastConfig> highcontrastconfig(m, "HighContrastConfig",
-    R"docstring(
-    Configuration struct for :py:class:`HighContrastFilter`.
-
-    Provides transformations to improve contrast for users with low vision.
-    )docstring");
-
-py::enum_<SkHighContrastConfig::InvertStyle>(highcontrastconfig, "InvertStyle")
-    .value("kNoInvert",
-        SkHighContrastConfig::InvertStyle::kNoInvert)
-    .value("kInvertBrightness",
-        SkHighContrastConfig::InvertStyle::kInvertBrightness)
-    .value("kInvertLightness",
-        SkHighContrastConfig::InvertStyle::kInvertLightness)
-    .value("kLast",
-        SkHighContrastConfig::InvertStyle::kLast)
-    .export_values();
-
+auto highcontrastconfig = static_cast<py::class_<SkHighContrastConfig>>(
+    m.attr("HighContrastConfig"));
 highcontrastconfig
     .def(py::init<>())
     .def(py::init<bool, SkHighContrastConfig::InvertStyle, SkScalar>(),
@@ -223,50 +284,20 @@ highcontrastconfig
     .def_readwrite("fContrast", &SkHighContrastConfig::fContrast)
     ;
 
-py::class_<SkHighContrastFilter>(m, "HighContrastFilter",
-    R"docstring(
-    Color filter that provides transformations to improve contrast for users
-    with low vision.
-
-    Applies the following transformations in this order. Each of these can be
-    configured using :py:class:`HighContrastConfig`.
-
-     - Conversion to grayscale
-     - Color inversion (either in RGB or HSL space)
-     - Increasing the resulting contrast.
-
-    Calling :py:meth:`HighContrastFilter.Make` will return nullptr if the config
-    is not valid, e.g. if you try to call it with a contrast outside the range
-    of -1.0 to 1.0.
-    )docstring")
+auto highcontrastfilter = static_cast<py::class_<SkHighContrastFilter>>(
+    m.attr("HighContrastFilter"));
+highcontrastfilter
     .def_static("Make", &SkHighContrastFilter::Make, py::arg("config"))
     ;
 
-py::class_<SkLumaColorFilter>(
-    m, "LumaColorFilter", R"docstring(
-    :py:class:`LumaColorFilter` multiplies the luma of its input into the alpha
-    channel, and sets the red, green, and blue channels to zero.
-
-    :py:class:`LumaColorFilter` (r,g,b,a) = {0,0,0, a * luma(r,g,b)}
-
-    This is similar to a luminanceToAlpha feColorMatrix, but note how this
-    filter folds in the previous alpha, something an feColorMatrix cannot do.
-
-    feColorMatrix(luminanceToAlpha; r,g,b,a) = {0,0,0, luma(r,g,b)}
-
-    (Despite its name, an feColorMatrix using luminanceToAlpha does actually
-    compute luma, a dot-product of gamma-encoded color channels, not luminance,
-    a dot-product of linear color channels. So at least
-    :py:class:`LumaColorFilter` and feColorMatrix+luminanceToAlpha agree there.)
-    )docstring")
+auto lumacolorfilter = static_cast<py::class_<SkLumaColorFilter>>(
+    m.attr("LumaColorFilter"));
+lumacolorfilter
     .def_static("Make", &SkLumaColorFilter::Make);
 
-py::class_<SkOverdrawColorFilter>(
-    m, "OverdrawColorFilter", R"docstring(
-    Uses the value in the src alpha channel to set the dst pixel.
-
-    0 -> colors[0] 1 -> colors[1] ... 5 (or larger) -> colors[5]
-    )docstring")
+auto overdrawcolorfilter = static_cast<py::class_<SkOverdrawColorFilter>>(
+    m.attr("OverdrawColorFilter"));
+overdrawcolorfilter
     .def_static("MakeWithColors",
         [] (const std::vector<SkColor>& colors) {
             if (colors.size() != 6)
@@ -277,9 +308,9 @@ py::class_<SkOverdrawColorFilter>(
     .def_readonly_static("kNumColors", &SkOverdrawColorFilter::kNumColors)
     ;
 
-/* SkTableColorFilter class removed in m116 */
-py::class_<std::unique_ptr<uint8_t>>(
-    m, "TableColorFilter")
+auto tablecolorfilter = static_cast<py::class_<std::unique_ptr<uint8_t>>>(
+    m.attr("TableColorFilter"));
+tablecolorfilter
     .def_static("Make",
         [] (const std::vector<uint8_t>& table) {
             if (table.size() != 256)

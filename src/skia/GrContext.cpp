@@ -23,12 +23,15 @@
 #include <pybind11/stl.h>
 #include <pybind11/cast.h>
 
-void initGrContext_gl(py::module&);
-void initGrContext_mock(py::module&);
-void initGrContext_vk(py::module&);
+void initGrContext_glDeclarations(py::module&);
+void initGrContext_mockDeclarations(py::module&);
+void initGrContext_vkDeclarations(py::module&);
 
-void initGrContext(py::module &m) {
+void initGrContext_glDefinitions(py::module&);
+void initGrContext_mockDefinitions(py::module&);
+void initGrContext_vkDefinitions(py::module&);
 
+void initGrContextDeclarations(py::module &m) {
 py::enum_<GrBackendApi>(m, "GrBackendApi",
     R"docstring(
     Possible 3D APIs that may be used by Ganesh.
@@ -173,28 +176,7 @@ py::class_<GrFlushInfo>(m, "GrFlushInfo",
     sent to the GPU and even in GL it is required to call GrDirectContext::submit to
     flush them. So a client should be able to treat all backend APIs the same in
     terms of how the submitted procs are treated.
-    )docstring")
-    .def(py::init<>())
-    .def_readonly("fNumSemaphores", &GrFlushInfo::fNumSemaphores)
-    .def_property("semaphores",
-        [] (const GrFlushInfo& info) -> py::object {
-            auto begin = info.fSignalSemaphores;
-            if (!begin)
-                return py::none();
-            return py::cast(std::vector<GrBackendSemaphore>(
-                begin, begin + info.fNumSemaphores));
-        },
-        [] (GrFlushInfo& info,
-            std::vector<GrBackendSemaphore>& semaphores) {
-            info.fNumSemaphores = semaphores.size();
-            info.fSignalSemaphores = (semaphores.size()) ?
-                &semaphores[0] : (GrBackendSemaphore*) nullptr;
-        })
-    // .def_readwrite("fFinishedProc", &GrFlushInfo::fFinishedProc)
-    // .def_readwrite("fFinishedContext", &GrFlushInfo::fFinishedContext)
-    // .def_readwrite("fSubmittedProc", &GrFlushInfo::fSubmittedProc)
-    // .def_readwrite("fSubmittedContext", &GrFlushInfo::fSubmittedContext)
-    ;
+    )docstring");
 
 py::enum_<GrSemaphoresSubmitted>(m, "GrSemaphoresSubmitted")
     .value("kNo", GrSemaphoresSubmitted::kNo)
@@ -239,7 +221,94 @@ py::enum_<GrTextureType>(m, "GrTextureType")
     .value("kExternal", GrTextureType::kExternal)
     .export_values();
 
-py::class_<GrBackendSemaphore>(m, "GrBackendSemaphore")
+py::class_<GrBackendSemaphore>(m, "GrBackendSemaphore");
+
+py::class_<GrBackendFormat>(m, "GrBackendFormat");
+
+py::class_<GrBackendTexture>(m, "GrBackendTexture");
+
+py::class_<GrContextOptions>(m, "GrContextOptions");
+
+/* m118: Remove GrBackendSurfaceMutableState */
+/*
+py::class_<GrBackendSurfaceMutableState>(m, "GrBackendSurfaceMutableState",
+    R"docstring(
+    Since Skia and clients can both modify gpu textures and their connected
+    state, Skia needs a way for clients to inform us if they have modifiend any
+    of this state.
+
+    In order to not need setters for every single API and state, we use this
+    class to be a generic wrapper around all the mutable state. This class is
+    used for calls that inform Skia of these texture/image state changes by the
+    client as well as for requesting state changes to be done by Skia. The
+    backend specific state that is wrapped by this class are:
+
+        Vulkan: VkImageLayout and QueueFamilyIndex
+    )docstring");
+*/
+
+py::class_<GrBackendRenderTarget>(m, "GrBackendRenderTarget");
+
+py::class_<GrContext_Base, sk_sp<GrContext_Base>, SkRefCnt>(m, "GrContext_Base");
+
+py::class_<GrImageContext, sk_sp<GrImageContext>, GrContext_Base>(
+    m, "GrImageContext")
+    ;
+
+py::class_<GrRecordingContext, sk_sp<GrRecordingContext>, GrImageContext>(
+    m, "GrRecordingContext");
+
+py::enum_<GrSyncCpu>(m, "GrSyncCpu",
+    R"docstring(
+    )docstring",
+    py::arithmetic())
+    .value("kNo", GrSyncCpu::kNo)
+    .value("kYes", GrSyncCpu::kYes)
+    .export_values();
+
+py::enum_<GrPurgeResourceOptions>(m, "GrPurgeResourceOptions",
+    R"docstring(
+    )docstring",
+    py::arithmetic())
+    .value("kAllResources", GrPurgeResourceOptions::kAllResources)
+    .value("kScratchResourcesOnly", GrPurgeResourceOptions::kScratchResourcesOnly)
+    .export_values();
+
+py::class_<GrDirectContext, sk_sp<GrDirectContext>, GrRecordingContext>(m, "GrDirectContext");
+
+initGrContext_glDeclarations(m);
+initGrContext_vkDeclarations(m);
+initGrContext_mockDeclarations(m);
+}
+
+void initGrContextDefinitions(py::module &m) {
+auto grflushinfo = static_cast<py::class_<GrFlushInfo>>(m.attr("GrFlushInfo"));
+grflushinfo
+    .def(py::init<>())
+    .def_readonly("fNumSemaphores", &GrFlushInfo::fNumSemaphores)
+    .def_property("semaphores",
+        [] (const GrFlushInfo& info) -> py::object {
+            auto begin = info.fSignalSemaphores;
+            if (!begin)
+                return py::none();
+            return py::cast(std::vector<GrBackendSemaphore>(
+                begin, begin + info.fNumSemaphores));
+        },
+        [] (GrFlushInfo& info,
+            std::vector<GrBackendSemaphore>& semaphores) {
+            info.fNumSemaphores = semaphores.size();
+            info.fSignalSemaphores = (semaphores.size()) ?
+                &semaphores[0] : (GrBackendSemaphore*) nullptr;
+        })
+    // .def_readwrite("fFinishedProc", &GrFlushInfo::fFinishedProc)
+    // .def_readwrite("fFinishedContext", &GrFlushInfo::fFinishedContext)
+    // .def_readwrite("fSubmittedProc", &GrFlushInfo::fSubmittedProc)
+    // .def_readwrite("fSubmittedContext", &GrFlushInfo::fSubmittedContext)
+    ;
+
+auto grbackendsemaphore = static_cast<py::class_<GrBackendSemaphore>>(
+    m.attr("GrBackendSemaphore"));
+grbackendsemaphore
     .def(py::init())
 /*
     .def("initGL",
@@ -297,7 +366,8 @@ py::class_<GrBackendSemaphore>(m, "GrBackendSemaphore")
 #endif
     ;
 
-py::class_<GrBackendFormat>(m, "GrBackendFormat")
+auto grbackendformat = static_cast<py::class_<GrBackendFormat>>(m.attr("GrBackendFormat"));
+grbackendformat
     .def(py::init<>())
     .def(py::init<const GrBackendFormat&>())
     .def_static("MakeGL", &GrBackendFormats::MakeGL,
@@ -338,7 +408,8 @@ py::class_<GrBackendFormat>(m, "GrBackendFormat")
     .def("isValid", &GrBackendFormat::isValid)
     ;
 
-py::class_<GrBackendTexture>(m, "GrBackendTexture")
+auto grbackendtexture = static_cast<py::class_<GrBackendTexture>>(m.attr("GrBackendTexture"));
+grbackendtexture
     .def(py::init<>())
     .def(py::init(
         [] (int width, int height, skgpu::Mipmapped mipMapped, const GrGLTextureInfo& glInfo) {
@@ -395,27 +466,18 @@ py::class_<GrBackendTexture>(m, "GrBackendTexture")
         py::arg("texture"))
     ;
 
-py::class_<GrContextOptions>(m, "GrContextOptions")
+auto grcontextoptions = static_cast<py::class_<GrContextOptions>>(
+    m.attr("GrContextOptions"));
+grcontextoptions
     .def(py::init<>())
     // TODO: Implement me!
     ;
 
 /* m118: Remove GrBackendSurfaceMutableState */
 /*
-py::class_<GrBackendSurfaceMutableState>(m, "GrBackendSurfaceMutableState",
-    R"docstring(
-    Since Skia and clients can both modify gpu textures and their connected
-    state, Skia needs a way for clients to inform us if they have modifiend any
-    of this state.
-
-    In order to not need setters for every single API and state, we use this
-    class to be a generic wrapper around all the mutable state. This class is
-    used for calls that inform Skia of these texture/image state changes by the
-    client as well as for requesting state changes to be done by Skia. The
-    backend specific state that is wrapped by this class are:
-
-        Vulkan: VkImageLayout and QueueFamilyIndex
-    )docstring")
+auto grbackendsurfacemutablestate = static_cast<py::class_<GrBackendSemaphore>>(
+    m.attr("GrBackendSurfaceMutableState"));
+grbackendsurfacemutablestate
     .def(py::init<>())
 #ifdef SK_VULKAN
     .def(py::init<VkImageLayout, uint32_t>(),
@@ -438,7 +500,9 @@ py::class_<GrBackendSurfaceMutableState>(m, "GrBackendSurfaceMutableState",
     ;
 */
 
-py::class_<GrBackendRenderTarget>(m, "GrBackendRenderTarget")
+auto grbackendrendertarget = static_cast<py::class_<GrBackendRenderTarget>>(
+    m.attr("GrBackendRenderTarget"));
+grbackendrendertarget
     .def(py::init<>())
     .def(py::init(
         [] (int width, int height, int sampleCnt, int stencilBits, const GrGLFramebufferInfo& glInfo) {
@@ -533,7 +597,9 @@ py::class_<GrBackendRenderTarget>(m, "GrBackendRenderTarget")
     .def("isValid", &GrBackendRenderTarget::isValid)
     ;
 
-py::class_<GrContext_Base, sk_sp<GrContext_Base>, SkRefCnt>(m, "GrContext_Base")
+auto grcontext_base = static_cast<py::class_<GrContext_Base,
+    sk_sp<GrContext_Base>, SkRefCnt>>(m.attr("GrContext_Base"));
+grcontext_base
     .def("asDirectContext", &GrContext_Base::asDirectContext,
         R"docstring(
         Safely downcast to a :py:class:`GrDirectContext`.
@@ -558,12 +624,9 @@ py::class_<GrContext_Base, sk_sp<GrContext_Base>, SkRefCnt>(m, "GrContext_Base")
     // .def("priv", py::overload_cast<>(&GrContext_Base::priv, py::const_))
     ;
 
-py::class_<GrImageContext, sk_sp<GrImageContext>, GrContext_Base>(
-    m, "GrImageContext")
-    ;
-
-py::class_<GrRecordingContext, sk_sp<GrRecordingContext>, GrImageContext>(
-    m, "GrRecordingContext")
+auto grrecordingcontext = static_cast<py::class_<GrRecordingContext,
+    sk_sp<GrRecordingContext>, GrImageContext>>(m.attr("GrRecordingContext"));
+grrecordingcontext
     .def("defaultBackendFormat", &GrRecordingContext::defaultBackendFormat,
         R"docstring(
         Retrieve the default :py:class:`GrBackendFormat` for a given
@@ -622,23 +685,9 @@ py::class_<GrRecordingContext, sk_sp<GrRecordingContext>, GrImageContext>(
     //     py::overload_cast<>(&GrRecordingContext::priv, py::const_))
     ;
 
-py::enum_<GrSyncCpu>(m, "GrSyncCpu",
-    R"docstring(
-    )docstring",
-    py::arithmetic())
-    .value("kNo", GrSyncCpu::kNo)
-    .value("kYes", GrSyncCpu::kYes)
-    .export_values();
-
-py::enum_<GrPurgeResourceOptions>(m, "GrPurgeResourceOptions",
-    R"docstring(
-    )docstring",
-    py::arithmetic())
-    .value("kAllResources", GrPurgeResourceOptions::kAllResources)
-    .value("kScratchResourcesOnly", GrPurgeResourceOptions::kScratchResourcesOnly)
-    .export_values();
-
-py::class_<GrDirectContext, sk_sp<GrDirectContext>, GrRecordingContext>(m, "GrDirectContext")
+auto grdirectcontext = static_cast<py::class_<GrDirectContext,
+    sk_sp<GrDirectContext>, GrRecordingContext>>(m.attr("GrDirectContext"));
+grdirectcontext
     .def("resetContext", &GrDirectContext::resetContext,
         R"docstring(
         The :py:class:`GrContext` normally assumes that no outsider is setting
@@ -1328,7 +1377,7 @@ m.attr("GrContext") = m.attr("GrDirectContext");
 m.attr("GrDirectContexts")       = m.attr("GrDirectContext");
 m.attr("GrBackendRenderTargets") = m.attr("GrBackendRenderTarget");
 
-initGrContext_gl(m);
-initGrContext_vk(m);
-initGrContext_mock(m);
+initGrContext_glDefinitions(m);
+initGrContext_vkDefinitions(m);
+initGrContext_mockDefinitions(m);
 }

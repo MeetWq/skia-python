@@ -45,7 +45,7 @@ sk_sp<SkVertices> MakeCopy(
 template<>
 struct py::detail::has_operator_delete<SkVertices, void> : std::false_type {};
 
-void initVertices(py::module &m) {
+void initVerticesDeclarations(py::module &m) {
 py::class_<SkVertices, sk_sp<SkVertices>> vertices(m, "Vertices",
     R"docstring(
     An immutable set of vertex data that can be used with
@@ -63,7 +63,11 @@ py::enum_<SkVertices::VertexMode>(vertices, "VertexMode")
         SkVertices::VertexMode::kLast_VertexMode)
     .export_values()
     ;
+}
 
+void initVerticesDefinitions(py::module &m) {
+auto vertices = static_cast<py::class_<SkVertices, sk_sp<SkVertices>>>(
+    m.attr("Vertices"));
 vertices
     .def(py::init(&MakeCopy),
         R"docstring(

@@ -6,7 +6,7 @@
 #include <include/effects/SkBlurMaskFilter.h>
 #include <pybind11/stl.h>
 
-void initMaskFilter(py::module &m) {
+void initMaskFilterDeclarations(py::module &m) {
 py::enum_<SkBlurStyle>(m, "BlurStyle", py::arithmetic())
     .value("kNormal_BlurStyle", SkBlurStyle::kNormal_SkBlurStyle,
         "fuzzy inside and outside")
@@ -54,7 +54,24 @@ py::class_<SkMaskFilter, sk_sp<SkMaskFilter>, SkFlattenable>(
 
         ~skia.ShaderMaskFilter
         ~skia.TableMaskFilter
-    )docstring")
+    )docstring");
+
+py::class_<SkBlurMaskFilter>(m, "BlurMaskFilter");
+
+py::class_<SkShaderMaskFilter>(m, "ShaderMaskFilter");
+
+py::class_<SkTableMaskFilter>(m, "TableMaskFilter",
+    R"docstring(
+    Applies a table lookup on each of the alpha values in the mask.
+
+    Helper methods create some common tables (e.g. gamma, clipping)
+    )docstring");
+}
+
+void initMaskFilterDefinitions(py::module &m) {
+auto maskfilter = static_cast<py::class_<SkMaskFilter, sk_sp<SkMaskFilter>,
+    SkFlattenable>>(m.attr("MaskFilter"));
+maskfilter
     .def_static("MakeBlur", &SkMaskFilter::MakeBlur,
         R"docstring(
         Create a blur maskfilter.
@@ -75,8 +92,8 @@ py::class_<SkMaskFilter, sk_sp<SkMaskFilter>, SkFlattenable>(
         py::arg("data"))
     ;
 
-
-py::class_<SkBlurMaskFilter>(m, "BlurMaskFilter")
+// auto blurmaskfilter = static_cast<py::class_<SkBlurMaskFilter>>(m.attr("BlurMaskFilter"));
+// blurmaskfilter
     // .def_static("MakeEmboss",
     //     [] (SkScalar blurSigma, const std::vector<SkScalar>& direction,
     //         SkScalar ambient, SkScalar specular) {
@@ -87,10 +104,10 @@ py::class_<SkBlurMaskFilter>(m, "BlurMaskFilter")
     //     },
     //     py::arg("blurSigma"), py::arg("direction"), py::arg("ambient"),
     //     py::arg("specular"))
-    ;
 
-
-py::class_<SkShaderMaskFilter>(m, "ShaderMaskFilter")
+auto shadermaskfilter = static_cast<py::class_<SkShaderMaskFilter>>(
+    m.attr("ShaderMaskFilter"));
+shadermaskfilter
     .def_static("Make",
         [] (const SkShader& shader) {
             auto data = shader.serialize();
@@ -101,12 +118,9 @@ py::class_<SkShaderMaskFilter>(m, "ShaderMaskFilter")
         },
         py::arg("shader"));
 
-py::class_<SkTableMaskFilter>(m, "TableMaskFilter",
-    R"docstring(
-    Applies a table lookup on each of the alpha values in the mask.
-
-    Helper methods create some common tables (e.g. gamma, clipping)
-    )docstring")
+auto tablemaskfilter = static_cast<py::class_<SkTableMaskFilter>>(
+    m.attr("TableMaskFilter"));
+tablemaskfilter
     .def_static("MakeGammaTable",
         [] (SkScalar gamma) {
             std::vector<uint8_t> table(256);

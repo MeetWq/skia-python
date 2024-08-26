@@ -7,7 +7,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
-void initCanvas(py::module &m) {
+void initCanvasDeclarations(py::module &m) {
 py::class_<SkAutoCanvasRestore>(m, "AutoCanvasRestore", R"docstring(
     Stack helper class calls :py:meth:`Canvas.restoreToCount` when
     :py:class:`AutoCanvasRestore` goes out of scope.
@@ -19,29 +19,7 @@ py::class_<SkAutoCanvasRestore>(m, "AutoCanvasRestore", R"docstring(
         with skia.AutoCanvasRestore(canvas):
             canvas.drawCircle(50., 50., 10., paint)
 
-    )docstring")
-    .def(py::init<SkCanvas*, bool>(),
-        R"docstring(
-        Preserves :py:meth:`Canvas.save` count.
-
-        Optionally saves :py:class:`Canvas` clip and :py:class:`Canvas` matrix.
-
-        :param skia.Canvas canvas: :py:class:`Canvas` to guard
-        :param bool doSave: call :py:meth:`Canvas.save`
-        :return: utility to restore :py:class:`Canvas` state on destructor
-        )docstring",
-        py::arg("canvas"), py::arg("doSave") = true,
-        py::keep_alive<0, 1>())
-    .def("restore", &SkAutoCanvasRestore::restore,
-        R"docstring(
-        Restores :py:class:`Canvas` to saved state immediately.
-
-        Subsequent calls and destructor have no effect.
-        )docstring")
-    .def("__enter__", [] (SkAutoCanvasRestore& self) {})
-    .def("__exit__",
-        [] (SkAutoCanvasRestore& self, py::args args) { self.restore(); })
-    ;
+    )docstring");
 
 py::enum_<SkClipOp>(m, "ClipOp")
     .value("kDifference", SkClipOp::kDifference)
@@ -136,7 +114,69 @@ py::enum_<SkCanvas::SaveLayerFlagsSet>(
 py::class_<SkCanvas::SaveLayerRec>(canvas, "SaveLayerRec",
     R"docstring(
     SaveLayerRec contains the state used to create the layer.
-    )docstring")
+    )docstring");
+
+py::class_<SkCanvas::Lattice> lattice(canvas, "Lattice", R"docstring(
+    :py:class:`Canvas.Lattice` divides :py:class:`Bitmap` or :py:class:`Image`
+    into a rectangular grid.
+
+    Grid entries on even columns and even rows are fixed; these entries are
+    always drawn at their original size if the destination is large enough. If
+    the destination side is too small to hold the fixed entries, all fixed
+    entries are proportionately scaled down to fit. The grid entries not on even
+    columns and rows are scaled to fit the remaining space, if any.
+    )docstring");
+
+py::enum_<SkCanvas::Lattice::RectType>(lattice, "RectType")
+    .value("kDefault", SkCanvas::Lattice::RectType::kDefault,
+        R"docstring(
+        draws :py:class:`Bitmap` into lattice rectangle
+        )docstring")
+    .value("kTransparent", SkCanvas::Lattice::RectType::kTransparent,
+        R"docstring(
+        skips lattice rectangle by making it transparent
+        )docstring")
+    .value("kFixedColor", SkCanvas::Lattice::RectType::kFixedColor,
+        R"docstring(
+        draws one of fColors into lattice rectangle
+        )docstring")
+    .export_values();
+
+py::class_<SkSVGCanvas>(m, "SVGCanvas");
+}
+
+void initCanvasDefinitions(py::module &m) {
+auto autocanvasrestore = static_cast<py::class_<SkAutoCanvasRestore>>(
+    m.attr("AutoCanvasRestore"));
+autocanvasrestore
+    .def(py::init<SkCanvas*, bool>(),
+        R"docstring(
+        Preserves :py:meth:`Canvas.save` count.
+
+        Optionally saves :py:class:`Canvas` clip and :py:class:`Canvas` matrix.
+
+        :param skia.Canvas canvas: :py:class:`Canvas` to guard
+        :param bool doSave: call :py:meth:`Canvas.save`
+        :return: utility to restore :py:class:`Canvas` state on destructor
+        )docstring",
+        py::arg("canvas"), py::arg("doSave") = true,
+        py::keep_alive<0, 1>())
+    .def("restore", &SkAutoCanvasRestore::restore,
+        R"docstring(
+        Restores :py:class:`Canvas` to saved state immediately.
+
+        Subsequent calls and destructor have no effect.
+        )docstring")
+    .def("__enter__", [] (SkAutoCanvasRestore& self) {})
+    .def("__exit__",
+        [] (SkAutoCanvasRestore& self, py::args args) { self.restore(); })
+    ;
+
+auto canvas = static_cast<py::class_<SkCanvas>>(m.attr("Canvas"));
+
+auto savelayerrec = static_cast<py::class_<SkCanvas::SaveLayerRec>>(
+    canvas.attr("SaveLayerRec"));
+savelayerrec
     .def(py::init<>(),
         R"docstring(
         Sets :py:attr:`fBounds`, :py:attr:`fPaint`, and :py:attr:`fBackdrop` to
@@ -197,32 +237,7 @@ py::class_<SkCanvas::SaveLayerRec>(canvas, "SaveLayerRec",
         )docstring")
     ;
 
-py::class_<SkCanvas::Lattice> lattice(canvas, "Lattice", R"docstring(
-    :py:class:`Canvas.Lattice` divides :py:class:`Bitmap` or :py:class:`Image`
-    into a rectangular grid.
-
-    Grid entries on even columns and even rows are fixed; these entries are
-    always drawn at their original size if the destination is large enough. If
-    the destination side is too small to hold the fixed entries, all fixed
-    entries are proportionately scaled down to fit. The grid entries not on even
-    columns and rows are scaled to fit the remaining space, if any.
-    )docstring");
-
-py::enum_<SkCanvas::Lattice::RectType>(lattice, "RectType")
-    .value("kDefault", SkCanvas::Lattice::RectType::kDefault,
-        R"docstring(
-        draws :py:class:`Bitmap` into lattice rectangle
-        )docstring")
-    .value("kTransparent", SkCanvas::Lattice::RectType::kTransparent,
-        R"docstring(
-        skips lattice rectangle by making it transparent
-        )docstring")
-    .value("kFixedColor", SkCanvas::Lattice::RectType::kFixedColor,
-        R"docstring(
-        draws one of fColors into lattice rectangle
-        )docstring")
-    .export_values();
-
+auto lattice = static_cast<py::class_<SkCanvas::Lattice>>(canvas.attr("Lattice"));
 lattice
     // .def(py::init([] (std::, py::list, SkCanvas::Lattice::RectType rectType,
     //     const SkIRect *bounds, const SkColor* colors) {
@@ -1433,7 +1448,7 @@ canvas
         :y1: end of line segment on y-axis
         :paint: stroke, blend, color, and so on, used to draw
         )docstring",
-        py::arg("x0"), py::arg("y0"), py::arg("x1"), py::arg("y1`"),
+        py::arg("x0"), py::arg("y0"), py::arg("x1"), py::arg("y1"),
         py::arg("paint"))
     .def("drawLine",
         py::overload_cast<SkPoint, SkPoint, const SkPaint&>(
@@ -2524,7 +2539,8 @@ canvas
 
     m.def("MakeNullCanvas", &SkMakeNullCanvas);
 
-py::class_<SkSVGCanvas>(m, "SVGCanvas")
+auto svgcanvas = static_cast<py::class_<SkSVGCanvas>>(m.attr("SVGCanvas"));
+svgcanvas
     .def_static("Make", &SkSVGCanvas::Make,
         R"docstring(
         Returns a new canvas that will generate SVG commands from its draw

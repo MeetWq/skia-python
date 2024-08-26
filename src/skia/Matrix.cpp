@@ -37,7 +37,7 @@ void SetItem(SkMatrix& m, int index, SkScalar value) {
     m[index] = value;
 }
 
-void initMatrix(py::module &m) {
+void initMatrixDeclarations(py::module &m) {
 py::enum_<SkApplyPerspectiveClip>(m, "ApplyPerspectiveClip")
     .value("kNo", SkApplyPerspectiveClip::kNo,
         "Don't pre-clip the geometry before applying the (perspective) matrix.")
@@ -88,6 +88,26 @@ py::enum_<SkMatrix::TypeMask>(matrix, "TypeMask")
         "perspective SkMatrix")
     .export_values();
 
+// M44
+py::class_<SkM44>(m, "M44", R"docstring(
+    4x4 matrix used by :py:class:`Canvas` and other parts of Skia.
+
+    Skia assumes a right-handed coordinate system: +X goes to the right +Y goes
+    down +Z goes into the screen (away from the viewer)
+    )docstring");
+
+// RSXform
+py::class_<SkRSXform>(m, "RSXform", R"docstring(
+    A compressed form of a rotation+scale matrix.
+
+        [ fSCos -fSSin fTx ]
+        [ fSSin fSCos fTy ]
+        [ 0 0 1 ]
+    )docstring");
+}
+
+void initMatrixDefinitions(py::module &m) {
+auto matrix = static_cast<py::class_<SkMatrix>>(m.attr("Matrix"));
 matrix
     .def(py::init<>(),
         R"docstring(
@@ -1801,24 +1821,13 @@ matrix
 
 py::implicitly_convertible<NumPy, SkMatrix>();
 
-// M44
-py::class_<SkM44>(m, "M44", R"docstring(
-    4x4 matrix used by :py:class:`Canvas` and other parts of Skia.
-
-    Skia assumes a right-handed coordinate system: +X goes to the right +Y goes
-    down +Z goes into the screen (away from the viewer)
-    )docstring")
+auto m44 = static_cast<py::class_<SkM44>>(m.attr("M44"));
+m44
     .def(py::init<>())
     ;
 
-// RSXform
-py::class_<SkRSXform>(m, "RSXform", R"docstring(
-    A compressed form of a rotation+scale matrix.
-
-        [ fSCos -fSSin fTx ]
-        [ fSSin fSCos fTy ]
-        [ 0 0 1 ]
-    )docstring")
+auto rsxform = static_cast<py::class_<SkRSXform>>(m.attr("RSXform"));
+rsxform
     .def(py::init(&SkRSXform::Make),
         py::arg("scos"), py::arg("ssin"), py::arg("tx"), py::arg("ty"))
     .def_static("Make",

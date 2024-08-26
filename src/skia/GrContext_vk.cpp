@@ -2,27 +2,16 @@
 #include <include/gpu/vk/VulkanBackendContext.h>
 #include <include/gpu/vk/GrVkTypes.h>
 
-void initGrContext_vk(py::module &m) {
-
+void initGrContext_vkDeclarations(py::module &m) {
 py::enum_<VkFormat>(m, "VkFormat", py::arithmetic())
     .export_values();
-
-py::implicitly_convertible<int, VkFormat>();
 
 py::enum_<VkImageLayout>(m, "VkImageLayout", py::arithmetic())
     .export_values();
 
-py::implicitly_convertible<int, VkImageLayout>();
+py::class_<skgpu::VulkanAlloc>(m, "GrVkAlloc");
 
-py::class_<skgpu::VulkanAlloc>(m, "GrVkAlloc")
-    .def(py::init<>())
-    // TODO: Implement me!
-    ;
-
-py::class_<skgpu::VulkanYcbcrConversionInfo>(m, "GrVkYcbcrConversionInfo")
-    .def(py::init<>())
-    // TODO: Implement me!
-    ;
+py::class_<skgpu::VulkanYcbcrConversionInfo>(m, "GrVkYcbcrConversionInfo");
 
 py::class_<GrVkImageInfo>(m, "GrVkImageInfo",
     R"docstring(
@@ -31,40 +20,7 @@ py::class_<GrVkImageInfo>(m, "GrVkImageInfo",
     VK_QUEUE_FAMILY_EXTERNAL, or VK_QUEUE_FAMILY_FOREIGN_EXT. If fSharingMode is
     VK_SHARING_MODE_EXCLUSIVE then fCurrentQueueFamily can also be the graphics
     queue index passed into Skia.
-    )docstring")
-    .def(py::init<>())
-    // .def(py::init(
-    //     [] (VkImage image,
-    //         skgpu::VulkanAlloc alloc,
-    //         VkImageTiling imageTiling,
-    //         VkImageLayout layout,
-    //         VkFormat format,
-    //         uint32_t levelCount,
-    //         uint32_t currentQueueFamily,
-    //         GrProtected isProtected,
-    //         const skgpu::VulkanYcbcrConversionInfo* ycbcrConversionInfo) {
-    //         return GrVkImageInfo(
-    //             image, alloc, imageTiling, layout, format, levelCount,
-    //             currentQueueFamily, isProtected,
-    //             (ycbcrConversionInfo) ?
-    //                 *ycbcrConversionInfo : skgpu::VulkanYcbcrConversionInfo());
-    //     }),
-    //     py::arg("image"), py::arg("alloc"), py::arg("imageTiling"),
-    //     py::arg("layout"), py::arg("format"), py::arg("levelCount"),
-    //     py::arg("currentQueueFamily") = VK_QUEUE_FAMILY_IGNORED,
-    //     py::arg("isProtected") = GrProtected::kNo,
-    //     py::arg("ycbcrConversionInfo") = nullptr)
-    // .def_readwrite("fImage", &GrVkImageInfo::fImage)
-    .def_readwrite("fAlloc", &GrVkImageInfo::fAlloc)
-    // .def_readwrite("fImageTiling", &GrVkImageInfo::fImageTiling)
-    // .def_readwrite("fImageLayout", &GrVkImageInfo::fImageLayout)
-    // .def_readwrite("fFormat", &GrVkImageInfo::fFormat)
-    .def_readwrite("fLevelCount", &GrVkImageInfo::fLevelCount)
-    .def_readwrite("fCurrentQueueFamily", &GrVkImageInfo::fCurrentQueueFamily)
-    .def_readwrite("fProtected", &GrVkImageInfo::fProtected)
-    .def_readwrite("fYcbcrConversionInfo", &GrVkImageInfo::fYcbcrConversionInfo)
-    .def_readwrite("fSharingMode", &GrVkImageInfo::fSharingMode)
-    ;
+    )docstring");
 
 py::class_<GrVkDrawableInfo>(m, "GrVkDrawableInfo")
     // TODO: Implement me!
@@ -111,7 +67,66 @@ py::class_<skgpu::VulkanBackendContext>(m, "GrVkBackendContext",
     created in or transitioned to that family. The refs held by members of this
     struct must be released (either by deleting the struct or manually releasing
     the refs) before the underlying vulkan device and instance are destroyed.
-    )docstring")
+    )docstring");
+}
+
+void initGrContext_vkDefinitions(py::module &m) {
+py::implicitly_convertible<int, VkFormat>();
+
+py::implicitly_convertible<int, VkImageLayout>();
+
+auto grvkalloc = static_cast<py::class_<skgpu::VulkanAlloc>>(m.attr("GrVkAlloc"));
+grvkalloc
+    .def(py::init<>())
+    // TODO: Implement me!
+    ;
+
+auto grvkycbcrconversioninfo = static_cast<py::class_<skgpu::VulkanYcbcrConversionInfo>>(
+    m.attr("GrVkYcbcrConversionInfo"));
+grvkycbcrconversioninfo
+    .def(py::init<>())
+    // TODO: Implement me!
+    ;
+
+auto grvkimageinfo = static_cast<py::class_<GrVkImageInfo>>(m.attr("GrVkImageInfo"));
+grvkimageinfo
+    .def(py::init<>())
+    // .def(py::init(
+    //     [] (VkImage image,
+    //         skgpu::VulkanAlloc alloc,
+    //         VkImageTiling imageTiling,
+    //         VkImageLayout layout,
+    //         VkFormat format,
+    //         uint32_t levelCount,
+    //         uint32_t currentQueueFamily,
+    //         GrProtected isProtected,
+    //         const skgpu::VulkanYcbcrConversionInfo* ycbcrConversionInfo) {
+    //         return GrVkImageInfo(
+    //             image, alloc, imageTiling, layout, format, levelCount,
+    //             currentQueueFamily, isProtected,
+    //             (ycbcrConversionInfo) ?
+    //                 *ycbcrConversionInfo : skgpu::VulkanYcbcrConversionInfo());
+    //     }),
+    //     py::arg("image"), py::arg("alloc"), py::arg("imageTiling"),
+    //     py::arg("layout"), py::arg("format"), py::arg("levelCount"),
+    //     py::arg("currentQueueFamily") = VK_QUEUE_FAMILY_IGNORED,
+    //     py::arg("isProtected") = GrProtected::kNo,
+    //     py::arg("ycbcrConversionInfo") = nullptr)
+    // .def_readwrite("fImage", &GrVkImageInfo::fImage)
+    .def_readwrite("fAlloc", &GrVkImageInfo::fAlloc)
+    // .def_readwrite("fImageTiling", &GrVkImageInfo::fImageTiling)
+    // .def_readwrite("fImageLayout", &GrVkImageInfo::fImageLayout)
+    // .def_readwrite("fFormat", &GrVkImageInfo::fFormat)
+    .def_readwrite("fLevelCount", &GrVkImageInfo::fLevelCount)
+    .def_readwrite("fCurrentQueueFamily", &GrVkImageInfo::fCurrentQueueFamily)
+    .def_readwrite("fProtected", &GrVkImageInfo::fProtected)
+    .def_readwrite("fYcbcrConversionInfo", &GrVkImageInfo::fYcbcrConversionInfo)
+    .def_readwrite("fSharingMode", &GrVkImageInfo::fSharingMode)
+    ;
+
+auto grvkbackendcontext = static_cast<py::class_<skgpu::VulkanBackendContext>>(
+    m.attr("GrVkBackendContext"));
+grvkbackendcontext
     .def(py::init<>())
     // TODO: Implement me!
     ;

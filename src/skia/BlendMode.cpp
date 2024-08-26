@@ -1,6 +1,6 @@
 #include "common.h"
 
-void initBlendMode(py::module &m) {
+void initBlendModeDeclarations(py::module &m) {
 py::enum_<SkBlendMode>(m, "BlendMode")
     .value("kClear", SkBlendMode::kClear,
         "replaces destination with zero: fully transparent")
@@ -98,6 +98,9 @@ py::enum_<SkBlendModeCoeff>(m, "BlendModeCoeff", R"docstring(
         "inverse dst alpha (i.e. 1 - da)")
     .value("kCoeffCount", SkBlendModeCoeff::kCoeffCount)
     .export_values();
+}
+
+void initBlendModeDefinitions(py::module &m) {
 m.def("BlendMode_AsCoeff", &SkBlendMode_AsCoeff,
     R"docstring(
     Returns true if 'mode' is a coefficient-based blend mode (<=

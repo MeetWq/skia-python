@@ -5,10 +5,14 @@
 #include <modules/svg/include/SkSVGRenderContext.h>
 #include <cstring>
 
-void initSVGDOM(py::module &m) {
+void initSVGDOMDeclarations(py::module &m) {
 py::class_<SkSVGDOM, sk_sp<SkSVGDOM>, SkRefCnt> SVGDOM(m, "SVGDOM");
+}
 
-SVGDOM
+void initSVGDOMDefinitions(py::module &m) {
+auto svgdom = static_cast<py::class_<SkSVGDOM, sk_sp<SkSVGDOM>,
+    SkRefCnt>>(m.attr("SVGDOM"));
+svgdom
     // .def_static("MakeFromDOM", &SkSVGDOM::MakeFromDOM, py::arg("dom"))
     .def_static("MakeFromStream", &SkSVGDOM::MakeFromStream, py::arg("stream"))
     .def("containerSize", &SkSVGDOM::containerSize)

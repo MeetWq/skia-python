@@ -3,7 +3,7 @@
 
 const int SkYUVAInfo::kMaxPlanes;
 
-void initImageInfo(py::module &m) {
+void initImageInfoDeclarations(py::module &m) {
 py::enum_<SkAlphaType>(m, "AlphaType")
     .value("kUnknown_AlphaType", SkAlphaType::kUnknown_SkAlphaType,
         "uninitialized")
@@ -93,7 +93,113 @@ py::class_<SkColorInfo>(m, "ColorInfo",
     It encodes how pixel bits describe alpha, transparency; color components
     red, blue, and green; and :py:class:`ColorSpace`, the range and linearity of
     colors.
+    )docstring");
+
+py::class_<SkImageInfo>(m, "ImageInfo",
+    R"docstring(
+    Describes pixel dimensions and encoding.
+
+    :py:class:`Bitmap`, :py:class:`Image`, :py:class:`Pixmap`, and
+    :py:class:`Surface` can be created from :py:class:`ImageInfo`.
+    :py:class:`ImageInfo` can be retrieved from :py:class:`Bitmap` and
+    :py:class:`Pixmap`, but not from :py:class:`Image` and :py:class:`Surface`.
+    For example, :py:class:`Image` and :py:class:`Surface` implementations may
+    defer pixel depth, so may not completely specify :py:class:`ImageInfo`.
+
+    :py:class:`ImageInfo` contains dimensions, the pixel integral width and
+    height. It encodes how pixel bits describe alpha, transparency; color
+    components red, blue, and green; and :py:class:`ColorSpace`, the range and
+    linearity of colors.
+    )docstring");
+
+py::class_<SkYUVAInfo> yuvainfo(m, "YUVAInfo",
+    R"docstring(
+    Specifies the structure of planes for a YUV image with optional alpha. The
+    actual planar data is not part of this structure and depending on usage is
+    in external textures or pixmaps.
+    )docstring");
+
+py::enum_<SkYUVAInfo::PlaneConfig>(yuvainfo, "PlaneConfig",
+    R"docstring(
+    Specifies how YUV (and optionally A) are divided among planes. Planes are separated by
+    underscores in the enum value names. Within each plane the pixmap/texture channels are
+    mapped to the YUVA channels in the order specified, e.g. for kY_UV Y is in channel 0 of plane
+    0, U is in channel 0 of plane 1, and V is in channel 1 of plane 1. Channel ordering
+    within a pixmap/texture given the channels it contains:
+    A:                       0:A
+    Luminance/Gray:          0:Gray
+    Luminance/Gray + Alpha:  0:Gray, 1:A
+    RG                       0:R,    1:G
+    RGB                      0:R,    1:G, 2:B
+    RGBA                     0:R,    1:G, 2:B, 3:A
     )docstring")
+    .value("kUnknown", SkYUVAInfo::PlaneConfig::kUnknown,
+        "")
+    //
+    .value("kY_U_V", SkYUVAInfo::PlaneConfig::kY_U_V,
+        "Plane 0: Y, Plane 1: U,  Plane 2: V")
+    .value("kY_V_U", SkYUVAInfo::PlaneConfig::kY_V_U,
+        "< Plane 0: Y, Plane 1: V,  Plane 2: U")
+    .value("kY_UV", SkYUVAInfo::PlaneConfig::kY_UV,
+        "Plane 0: Y, Plane 1: UV")
+    .value("kY_VU", SkYUVAInfo::PlaneConfig::kY_VU,
+        "Plane 0: Y, Plane 1: VU")
+    .value("kYUV", SkYUVAInfo::PlaneConfig::kYUV,
+        "Plane 0: YUV")
+    .value("kUYV", SkYUVAInfo::PlaneConfig::kUYV,
+        "Plane 0: UYV")
+    //
+    .value("kY_U_V_A", SkYUVAInfo::PlaneConfig::kY_U_V_A,
+        "Plane 0: Y, Plane 1: U,  Plane 2: V, Plane 3: A")
+    .value("kY_V_U_A", SkYUVAInfo::PlaneConfig::kY_V_U_A,
+        "Plane 0: Y, Plane 1: V,  Plane 2: U, Plane 3: A")
+    .value("kY_UV_A", SkYUVAInfo::PlaneConfig::kY_UV_A,
+        "Plane 0: Y, Plane 1: UV, Plane 2: A")
+    .value("kY_VU_A", SkYUVAInfo::PlaneConfig::kY_VU_A,
+        "Plane 0: Y, Plane 1: VU, Plane 2: A")
+    .value("kYUVA", SkYUVAInfo::PlaneConfig::kYUVA,
+        "Plane 0: YUVA")
+    .value("kUYVA", SkYUVAInfo::PlaneConfig::kUYVA,
+        "Plane 0: UYVA")
+    .export_values();
+
+
+py::enum_<SkYUVAInfo::Subsampling>(yuvainfo, "Subsampling",
+    R"docstring(
+    UV subsampling is also specified in the enum value names using J:a:b notation (e.g. 4:2:0 is
+    1/2 horizontal and 1/2 vertical resolution for U and V). If alpha is present it is not sub-
+    sampled. Note that Subsampling values other than k444 are only valid with PlaneConfig values
+    that have U and V in different planes than Y (and A, if present).
+    )docstring")
+    .value("kUnknown", SkYUVAInfo::Subsampling::kUnknown)
+    //
+    .value("k444", SkYUVAInfo::Subsampling::k444)
+    .value("k422", SkYUVAInfo::Subsampling::k422)
+    .value("k420", SkYUVAInfo::Subsampling::k420)
+    .value("k440", SkYUVAInfo::Subsampling::k440)
+    .value("k411", SkYUVAInfo::Subsampling::k411)
+    .value("k410", SkYUVAInfo::Subsampling::k410)
+    .export_values();
+
+
+py::enum_<SkYUVAInfo::Siting>(yuvainfo, "Siting",
+    R"docstring(
+    Describes how subsampled chroma values are sited relative to luma values.
+
+    Currently only centered siting is supported but will expand to support
+    additional sitings.
+    )docstring")
+    .value("kCentered", SkYUVAInfo::Siting::kCentered,
+        R"docstring(
+        Subsampled chroma value is sited at the center of the block of
+        corresponding luma values.
+        )docstring")
+    .export_values();
+}
+
+void initImageInfoDefinitions(py::module &m) {
+auto colorinfo = static_cast<py::class_<SkColorInfo>>(m.attr("ColorInfo"));
+colorinfo
     .def("__repr__",
         [] (const SkImageInfo& info) {
             return py::str("ImageInfo({}, {}, {}, {})").format(
@@ -187,22 +293,8 @@ py::class_<SkColorInfo>(m, "ColorInfo",
         )docstring")
     ;
 
-py::class_<SkImageInfo>(m, "ImageInfo",
-    R"docstring(
-    Describes pixel dimensions and encoding.
-
-    :py:class:`Bitmap`, :py:class:`Image`, :py:class:`Pixmap`, and
-    :py:class:`Surface` can be created from :py:class:`ImageInfo`.
-    :py:class:`ImageInfo` can be retrieved from :py:class:`Bitmap` and
-    :py:class:`Pixmap`, but not from :py:class:`Image` and :py:class:`Surface`.
-    For example, :py:class:`Image` and :py:class:`Surface` implementations may
-    defer pixel depth, so may not completely specify :py:class:`ImageInfo`.
-
-    :py:class:`ImageInfo` contains dimensions, the pixel integral width and
-    height. It encodes how pixel bits describe alpha, transparency; color
-    components red, blue, and green; and :py:class:`ColorSpace`, the range and
-    linearity of colors.
-    )docstring")
+auto imageinfo = static_cast<py::class_<SkImageInfo>>(m.attr("ImageInfo"));
+imageinfo
     .def(py::init<>(),
         R"docstring(
         Creates an empty :py:class:`ImageInfo` with
@@ -722,91 +814,7 @@ m.def("ColorTypeValidateAlphaType", &SkColorTypeValidateAlphaType,
     )docstring",
     py::arg("colorType"), py::arg("alphaType"), py::arg("canonical") = nullptr);
 
-
-py::class_<SkYUVAInfo> yuvainfo(m, "YUVAInfo",
-    R"docstring(
-    Specifies the structure of planes for a YUV image with optional alpha. The
-    actual planar data is not part of this structure and depending on usage is
-    in external textures or pixmaps.
-    )docstring");
-
-py::enum_<SkYUVAInfo::PlaneConfig>(yuvainfo, "PlaneConfig",
-    R"docstring(
-    Specifies how YUV (and optionally A) are divided among planes. Planes are separated by
-    underscores in the enum value names. Within each plane the pixmap/texture channels are
-    mapped to the YUVA channels in the order specified, e.g. for kY_UV Y is in channel 0 of plane
-    0, U is in channel 0 of plane 1, and V is in channel 1 of plane 1. Channel ordering
-    within a pixmap/texture given the channels it contains:
-    A:                       0:A
-    Luminance/Gray:          0:Gray
-    Luminance/Gray + Alpha:  0:Gray, 1:A
-    RG                       0:R,    1:G
-    RGB                      0:R,    1:G, 2:B
-    RGBA                     0:R,    1:G, 2:B, 3:A
-    )docstring")
-    .value("kUnknown", SkYUVAInfo::PlaneConfig::kUnknown,
-        "")
-    //
-    .value("kY_U_V", SkYUVAInfo::PlaneConfig::kY_U_V,
-        "Plane 0: Y, Plane 1: U,  Plane 2: V")
-    .value("kY_V_U", SkYUVAInfo::PlaneConfig::kY_V_U,
-        "< Plane 0: Y, Plane 1: V,  Plane 2: U")
-    .value("kY_UV", SkYUVAInfo::PlaneConfig::kY_UV,
-        "Plane 0: Y, Plane 1: UV")
-    .value("kY_VU", SkYUVAInfo::PlaneConfig::kY_VU,
-        "Plane 0: Y, Plane 1: VU")
-    .value("kYUV", SkYUVAInfo::PlaneConfig::kYUV,
-        "Plane 0: YUV")
-    .value("kUYV", SkYUVAInfo::PlaneConfig::kUYV,
-        "Plane 0: UYV")
-    //
-    .value("kY_U_V_A", SkYUVAInfo::PlaneConfig::kY_U_V_A,
-        "Plane 0: Y, Plane 1: U,  Plane 2: V, Plane 3: A")
-    .value("kY_V_U_A", SkYUVAInfo::PlaneConfig::kY_V_U_A,
-        "Plane 0: Y, Plane 1: V,  Plane 2: U, Plane 3: A")
-    .value("kY_UV_A", SkYUVAInfo::PlaneConfig::kY_UV_A,
-        "Plane 0: Y, Plane 1: UV, Plane 2: A")
-    .value("kY_VU_A", SkYUVAInfo::PlaneConfig::kY_VU_A,
-        "Plane 0: Y, Plane 1: VU, Plane 2: A")
-    .value("kYUVA", SkYUVAInfo::PlaneConfig::kYUVA,
-        "Plane 0: YUVA")
-    .value("kUYVA", SkYUVAInfo::PlaneConfig::kUYVA,
-        "Plane 0: UYVA")
-    .export_values();
-
-
-py::enum_<SkYUVAInfo::Subsampling>(yuvainfo, "Subsampling",
-    R"docstring(
-    UV subsampling is also specified in the enum value names using J:a:b notation (e.g. 4:2:0 is
-    1/2 horizontal and 1/2 vertical resolution for U and V). If alpha is present it is not sub-
-    sampled. Note that Subsampling values other than k444 are only valid with PlaneConfig values
-    that have U and V in different planes than Y (and A, if present).
-    )docstring")
-    .value("kUnknown", SkYUVAInfo::Subsampling::kUnknown)
-    //
-    .value("k444", SkYUVAInfo::Subsampling::k444)
-    .value("k422", SkYUVAInfo::Subsampling::k422)
-    .value("k420", SkYUVAInfo::Subsampling::k420)
-    .value("k440", SkYUVAInfo::Subsampling::k440)
-    .value("k411", SkYUVAInfo::Subsampling::k411)
-    .value("k410", SkYUVAInfo::Subsampling::k410)
-    .export_values();
-
-
-py::enum_<SkYUVAInfo::Siting>(yuvainfo, "Siting",
-    R"docstring(
-    Describes how subsampled chroma values are sited relative to luma values.
-
-    Currently only centered siting is supported but will expand to support
-    additional sitings.
-    )docstring")
-    .value("kCentered", SkYUVAInfo::Siting::kCentered,
-        R"docstring(
-        Subsampled chroma value is sited at the center of the block of
-        corresponding luma values.
-        )docstring")
-    .export_values();
-
+auto yuvainfo = static_cast<py::class_<SkYUVAInfo>>(m.attr("YUVAInfo"));
 yuvainfo
     .def_readonly_static("kMaxPlanes", &SkYUVAInfo::kMaxPlanes)
     .def_static("PlaneDimensions",

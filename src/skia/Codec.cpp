@@ -26,8 +26,7 @@ void* GetBufferPtr(const SkImageInfo& info, py::buffer& data, size_t rowBytes) {
 
 }
 
-void initCodec(py::module &m) {
-
+void initCodecDeclarations(py::module &m) {
 py::enum_<SkEncodedOrigin>(m, "EncodedOrigin",
     R"docstring(
     Image orientation values from their encoded EXIF data
@@ -54,15 +53,6 @@ py::enum_<SkEncodedOrigin>(m, "EncodedOrigin",
     .value("kLast_EncodedOrigin",
         SkEncodedOrigin::kLast_SkEncodedOrigin)
     .export_values();
-
-m.def("EncodedOriginToMatrix", &SkEncodedOriginToMatrix,
-    R"docstring(
-    Given an encoded origin and the width and height of the source data,
-    returns a matrix that transforms the source rectangle with upper left
-    corner at [0, 0] and origin to a correctly oriented destination rectangle
-    of [0, 0, w, h].
-    )docstring",
-    py::arg("origin"), py::arg("w"), py::arg("h"));
 
 py::class_<SkCodec> codec(m, "Codec",
     R"docstring(
@@ -162,85 +152,12 @@ py::enum_<SkCodec::ZeroInitialized>(codec, "ZeroInitialized",
 py::class_<SkCodec::FrameInfo>(codec, "FrameInfo",
     R"docstring(
     Information about individual frames in a multi-framed image.
-    )docstring")
-    .def(py::init<>())
-    .def_readwrite("fRequiredFrame", &SkCodec::FrameInfo::fRequiredFrame,
-        R"docstring(
-        The frame that this frame needs to be blended with, or
-        kNoFrame if this frame is independent (so it can be
-        drawn over an uninitialized buffer).
-
-        Note that this is the *earliest* frame that can be used
-        for blending. Any frame from [fRequiredFrame, i) can be
-        used, unless its fDisposalMethod is kRestorePrevious.
-        )docstring")
-    .def_readwrite("fDuration", &SkCodec::FrameInfo::fDuration,
-        R"docstring(
-        Number of milliseconds to show this frame.
-        )docstring")
-    .def_readwrite("fFullyReceived", &SkCodec::FrameInfo::fFullyReceived,
-        R"docstring(
-        Whether the end marker for this frame is contained in the stream.
-
-        Note: this does not guarantee that an attempt to decode will be
-        complete. There could be an error in the stream.
-        )docstring")
-    .def_readwrite("fAlphaType", &SkCodec::FrameInfo::fAlphaType,
-        R"docstring(
-        This is conservative; it will still return non-opaque if e.g. a
-        color index-based frame has a color with alpha but does not use it.
-        )docstring")
-    .def_readwrite("fDisposalMethod", &SkCodec::FrameInfo::fDisposalMethod,
-        R"docstring(
-        How this frame should be modified before decoding the next one.
-        )docstring");
+    )docstring");
 
 py::class_<SkCodec::Options>(codec, "Options",
     R"docstring(
     Additional options to pass to getPixels.
-    )docstring")
-    .def(py::init<>())
-    .def_readwrite("fZeroInitialized", &SkCodec::Options::fZeroInitialized)
-    .def_readwrite("fSubset", &SkCodec::Options::fSubset,
-        R"docstring(
-        If not NULL, represents a subset of the original image to decode.
-        Must be within the bounds returned by :py:meth:`~SkCodec.getInfo`.
-        If the EncodedFormat is :py:attr:`EncodedImageFormat.kWEBP` (the only
-        one which currently supports subsets), the top and left values must be
-        even.
-
-        In getPixels and incremental decode, we will attempt to decode the
-        exact rectangular subset specified by fSubset.
-
-        In a scanline decode, it does not make sense to specify a subset
-        top or subset height, since the client already controls which rows
-        to get and which rows to skip.  During scanline decodes, we will
-        require that the subset top be zero and the subset height be equal
-        to the full height.  We will, however, use the values of
-        subset left and subset width to decode partial scanlines on calls
-        to :py:meth:`~SkCodec.getScanlines`.
-        )docstring")
-    .def_readwrite("fFrameIndex", &SkCodec::Options::fFrameIndex,
-        R"docstring(
-        The frame to decode.
-
-        Only meaningful for multi-frame images.
-        )docstring")
-    .def_readwrite("fPriorFrame", &SkCodec::Options::fPriorFrame,
-        R"docstring(
-        If not kNoFrame, the dst already contains the prior frame at this index.
-
-        Only meaningful for multi-frame images.
-
-        If fFrameIndex needs to be blended with a prior frame (as reported by
-        getFrameInfo[fFrameIndex].fRequiredFrame), the client can set this to
-        any non-kRestorePrevious frame in [fRequiredFrame, fFrameIndex) to
-        indicate that that frame is already in the dst. Options.fZeroInitialized
-        is ignored in this case.
-
-        If set to kNoFrame, the codec will decode any necessary required
-        frame(s) first.
-        )docstring");
+    )docstring");
 
 py::enum_<SkCodec::SkScanlineOrder>(codec, "ScanlineOrder",
     R"docstring(
@@ -309,6 +226,98 @@ py::enum_<SkCodecAnimation::DisposalMethod>(codec, "DisposalMethod",
         In a GIF, a value of 4 is also treated as RestorePrevious.
         )docstring")
     .export_values();
+}
+
+void initCodecDefinitions(py::module &m) {
+m.def("EncodedOriginToMatrix", &SkEncodedOriginToMatrix,
+    R"docstring(
+    Given an encoded origin and the width and height of the source data,
+    returns a matrix that transforms the source rectangle with upper left
+    corner at [0, 0] and origin to a correctly oriented destination rectangle
+    of [0, 0, w, h].
+    )docstring",
+    py::arg("origin"), py::arg("w"), py::arg("h"));
+
+auto codec = static_cast<py::class_<SkCodec>>(m.attr("Codec"));
+
+auto frameinfo = static_cast<py::class_<SkCodec::FrameInfo>>(codec.attr("FrameInfo"));
+frameinfo
+    .def(py::init<>())
+    .def_readwrite("fRequiredFrame", &SkCodec::FrameInfo::fRequiredFrame,
+        R"docstring(
+        The frame that this frame needs to be blended with, or
+        kNoFrame if this frame is independent (so it can be
+        drawn over an uninitialized buffer).
+
+        Note that this is the *earliest* frame that can be used
+        for blending. Any frame from [fRequiredFrame, i) can be
+        used, unless its fDisposalMethod is kRestorePrevious.
+        )docstring")
+    .def_readwrite("fDuration", &SkCodec::FrameInfo::fDuration,
+        R"docstring(
+        Number of milliseconds to show this frame.
+        )docstring")
+    .def_readwrite("fFullyReceived", &SkCodec::FrameInfo::fFullyReceived,
+        R"docstring(
+        Whether the end marker for this frame is contained in the stream.
+
+        Note: this does not guarantee that an attempt to decode will be
+        complete. There could be an error in the stream.
+        )docstring")
+    .def_readwrite("fAlphaType", &SkCodec::FrameInfo::fAlphaType,
+        R"docstring(
+        This is conservative; it will still return non-opaque if e.g. a
+        color index-based frame has a color with alpha but does not use it.
+        )docstring")
+    .def_readwrite("fDisposalMethod", &SkCodec::FrameInfo::fDisposalMethod,
+        R"docstring(
+        How this frame should be modified before decoding the next one.
+        )docstring");
+
+auto options = static_cast<py::class_<SkCodec::Options>>(codec.attr("Options"));
+options
+    .def(py::init<>())
+    .def_readwrite("fZeroInitialized", &SkCodec::Options::fZeroInitialized)
+    .def_readwrite("fSubset", &SkCodec::Options::fSubset,
+        R"docstring(
+        If not NULL, represents a subset of the original image to decode.
+        Must be within the bounds returned by :py:meth:`~SkCodec.getInfo`.
+        If the EncodedFormat is :py:attr:`EncodedImageFormat.kWEBP` (the only
+        one which currently supports subsets), the top and left values must be
+        even.
+
+        In getPixels and incremental decode, we will attempt to decode the
+        exact rectangular subset specified by fSubset.
+
+        In a scanline decode, it does not make sense to specify a subset
+        top or subset height, since the client already controls which rows
+        to get and which rows to skip.  During scanline decodes, we will
+        require that the subset top be zero and the subset height be equal
+        to the full height.  We will, however, use the values of
+        subset left and subset width to decode partial scanlines on calls
+        to :py:meth:`~SkCodec.getScanlines`.
+        )docstring")
+    .def_readwrite("fFrameIndex", &SkCodec::Options::fFrameIndex,
+        R"docstring(
+        The frame to decode.
+
+        Only meaningful for multi-frame images.
+        )docstring")
+    .def_readwrite("fPriorFrame", &SkCodec::Options::fPriorFrame,
+        R"docstring(
+        If not kNoFrame, the dst already contains the prior frame at this index.
+
+        Only meaningful for multi-frame images.
+
+        If fFrameIndex needs to be blended with a prior frame (as reported by
+        getFrameInfo[fFrameIndex].fRequiredFrame), the client can set this to
+        any non-kRestorePrevious frame in [fRequiredFrame, fFrameIndex) to
+        indicate that that frame is already in the dst. Options.fZeroInitialized
+        is ignored in this case.
+
+        If set to kNoFrame, the codec will decode any necessary required
+        frame(s) first.
+        )docstring");
 
 codec
     .def(py::init(&MakeFromData),

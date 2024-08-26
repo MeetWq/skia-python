@@ -8,7 +8,7 @@ namespace py = pybind11;
 
 constexpr size_t SkRRect::kSizeInMemory;
 
-void initRect(py::module &m) {
+void initRectDeclarations(py::module &m) {
 // IRect
 py::class_<SkIRect>(m, "IRect", R"docstring(
     :py:class:`IRect` holds four 32-bit integer coordinates describing the upper
@@ -26,7 +26,74 @@ py::class_<SkIRect>(m, "IRect", R"docstring(
         print(irect.width(), irect.height())
         left, top, right, bottom = tuple(irect)  # Convert to tuple
 
-    )docstring")
+    )docstring");
+
+// Rect
+py::class_<SkRect>(m, "Rect", R"docstring(
+    :py:class:`Rect` holds four float coordinates describing the upper and lower
+    bounds of a rectangle.
+
+    :py:class:`Rect` may be created from outer bounds or from position, width,
+    and height. :py:class:`Rect` describes an area; if its right is less than or
+    equal to its left, or if its bottom is less than or equal to its top, it is
+    considered empty.
+
+    Example::
+
+        rect = skia.Rect(0, 0, 180, 120)
+        rect = skia.Rect((0, 0, 180, 120))  # Convert from tuple
+        print(rect.width(), rect.height())
+        left, top, right, bottom = tuple(rect)  # Convert to tuple
+    )docstring");
+
+py::class_<SkRRect> rrect(m, "RRect", R"docstring(
+    :py:class:`RRect` describes a rounded rectangle with a bounds and a pair of
+    radii for each corner.
+
+    The bounds and radii can be set so that :py:class:`RRect` describes: a
+    rectangle with sharp corners; a circle; an oval; or a rectangle with one or
+    more rounded corners.
+
+    :py:class:`RRect` allows implementing CSS properties that describe rounded
+    corners. :py:class:`RRect` may have up to eight different radii, one for
+    each axis on each of its four corners.
+
+    :py:class:`RRect` may modify the provided parameters when initializing
+    bounds and radii. If either axis radii is zero or less: radii are stored as
+    zero; corner is square. If corner curves overlap, radii are proportionally
+    reduced to fit within bounds.
+    )docstring");
+
+py::enum_<SkRRect::Type>(rrect, "Type")
+    .value("kEmpty_Type", SkRRect::Type::kEmpty_Type, "zero width or height")
+    .value("kRect_Type", SkRRect::Type::kRect_Type,
+        "non-zero width and height, and zeroed radii")
+    .value("kOval_Type", SkRRect::Type::kOval_Type,
+        "non-zero width and height filled with radii")
+    .value("kSimple_Type", SkRRect::Type::kSimple_Type,
+        "non-zero width and height with equal radii")
+    .value("kNinePatch_Type", SkRRect::Type::kNinePatch_Type,
+        "non-zero width and height with axis-aligned radii")
+    .value("kComplex_Type", SkRRect::Type::kComplex_Type,
+        "non-zero width and height with arbitrary radii")
+    .value("kLastType", SkRRect::Type::kLastType, "largest Type value")
+    .export_values();
+
+py::enum_<SkRRect::Corner>(rrect, "Corner")
+    .value("kUpperLeft_Corner", SkRRect::Corner::kUpperLeft_Corner,
+        "index of top-left corner radii")
+    .value("kUpperRight_Corner", SkRRect::Corner::kUpperRight_Corner,
+        "index of top-right corner radii")
+    .value("kLowerRight_Corner", SkRRect::Corner::kLowerRight_Corner,
+        "index of bottom-right corner radii")
+    .value("kLowerLeft_Corner", SkRRect::Corner::kLowerLeft_Corner,
+        "index of bottom-left corner radii")
+    .export_values();
+}
+
+void initRectDefinitions(py::module &m) {
+auto irect = static_cast<py::class_<SkIRect>>(m.attr("IRect"));
+irect
     .def(py::init(&SkIRect::MakeEmpty),
         R"docstring(
         Creates :py:class:`IRect` set to (0, 0, 0, 0).
@@ -614,23 +681,8 @@ py::class_<SkIRect>(m, "IRect", R"docstring(
 
 py::implicitly_convertible<py::tuple, SkIRect>();
 
-// Rect
-py::class_<SkRect>(m, "Rect", R"docstring(
-    :py:class:`Rect` holds four float coordinates describing the upper and lower
-    bounds of a rectangle.
-
-    :py:class:`Rect` may be created from outer bounds or from position, width,
-    and height. :py:class:`Rect` describes an area; if its right is less than or
-    equal to its left, or if its bottom is less than or equal to its top, it is
-    considered empty.
-
-    Example::
-
-        rect = skia.Rect(0, 0, 180, 120)
-        rect = skia.Rect((0, 0, 180, 120))  # Convert from tuple
-        print(rect.width(), rect.height())
-        left, top, right, bottom = tuple(rect)  # Convert to tuple
-    )docstring")
+auto rect = static_cast<py::class_<SkRect>>(m.attr("Rect"));
+rect
     .def(py::init(&SkRect::MakeEmpty),
         R"docstring(
         Returns constructed :py:class:`Rect` set to (0, 0, 0, 0).
@@ -1442,50 +1494,7 @@ py::class_<SkRect>(m, "Rect", R"docstring(
 
 py::implicitly_convertible<py::tuple, SkRect>();
 
-py::class_<SkRRect> rrect(m, "RRect", R"docstring(
-    :py:class:`RRect` describes a rounded rectangle with a bounds and a pair of
-    radii for each corner.
-
-    The bounds and radii can be set so that :py:class:`RRect` describes: a
-    rectangle with sharp corners; a circle; an oval; or a rectangle with one or
-    more rounded corners.
-
-    :py:class:`RRect` allows implementing CSS properties that describe rounded
-    corners. :py:class:`RRect` may have up to eight different radii, one for
-    each axis on each of its four corners.
-
-    :py:class:`RRect` may modify the provided parameters when initializing
-    bounds and radii. If either axis radii is zero or less: radii are stored as
-    zero; corner is square. If corner curves overlap, radii are proportionally
-    reduced to fit within bounds.
-    )docstring");
-
-py::enum_<SkRRect::Type>(rrect, "Type")
-    .value("kEmpty_Type", SkRRect::Type::kEmpty_Type, "zero width or height")
-    .value("kRect_Type", SkRRect::Type::kRect_Type,
-        "non-zero width and height, and zeroed radii")
-    .value("kOval_Type", SkRRect::Type::kOval_Type,
-        "non-zero width and height filled with radii")
-    .value("kSimple_Type", SkRRect::Type::kSimple_Type,
-        "non-zero width and height with equal radii")
-    .value("kNinePatch_Type", SkRRect::Type::kNinePatch_Type,
-        "non-zero width and height with axis-aligned radii")
-    .value("kComplex_Type", SkRRect::Type::kComplex_Type,
-        "non-zero width and height with arbitrary radii")
-    .value("kLastType", SkRRect::Type::kLastType, "largest Type value")
-    .export_values();
-
-py::enum_<SkRRect::Corner>(rrect, "Corner")
-    .value("kUpperLeft_Corner", SkRRect::Corner::kUpperLeft_Corner,
-        "index of top-left corner radii")
-    .value("kUpperRight_Corner", SkRRect::Corner::kUpperRight_Corner,
-        "index of top-right corner radii")
-    .value("kLowerRight_Corner", SkRRect::Corner::kLowerRight_Corner,
-        "index of bottom-right corner radii")
-    .value("kLowerLeft_Corner", SkRRect::Corner::kLowerLeft_Corner,
-        "index of bottom-left corner radii")
-    .export_values();
-
+auto rrect = static_cast<py::class_<SkRRect>>(m.attr("RRect"));
 rrect
     .def(py::init(),
         R"docstring(

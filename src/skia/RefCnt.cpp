@@ -1,6 +1,6 @@
 #include "common.h"
 
-void initRefCnt(py::module &m) {
+void initRefCntDeclarations(py::module &m) {
 py::class_<SkRefCntBase, sk_sp<SkRefCntBase>>(m, "RefCntBase",
     R"docstring(
     :py:class:`RefCntBase` is the base class for objects that may be shared by
@@ -12,7 +12,15 @@ py::class_<SkRefCntBase, sk_sp<SkRefCntBase>>(m, "RefCntBase",
     (virtual) destructor is called. It is an error for the destructor to be
     called explicitly (or via the object going out of scope on the stack or
     calling delete) if getRefCnt() > 1.
-    )docstring")
+    )docstring");
+
+py::class_<SkRefCnt, sk_sp<SkRefCnt>, SkRefCntBase>(m, "RefCnt");
+}
+
+void initRefCntDefinitions(py::module &m) {
+auto refcntbase = static_cast<py::class_<SkRefCntBase, sk_sp<SkRefCntBase>>>(
+    m.attr("RefCntBase"));
+refcntbase
     .def("unique", &SkRefCntBase::unique,
         R"docstring(
         May return true if the caller is the only owner.
@@ -34,6 +42,4 @@ py::class_<SkRefCntBase, sk_sp<SkRefCntBase>>(m, "RefCntBase",
         been allocated via new, and not on the stack.
         )docstring")
     ;
-
-py::class_<SkRefCnt, sk_sp<SkRefCnt>, SkRefCntBase>(m, "RefCnt");
 }

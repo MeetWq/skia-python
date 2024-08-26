@@ -28,7 +28,7 @@ void PyReadPixelsCallback (
 const SkSurfaceProps::Flags SkSurfaceProps::kUseDistanceFieldFonts_Flag;
 */
 
-void initSurface(py::module &m) {
+void initSurfaceDeclarations(py::module &m) {
 
 /* m111: SkBackingFit is no longer part of the public API. */
 /*
@@ -81,67 +81,7 @@ py::enum_<SkSurfaceProps::Flags>(surfaceprops, "Flags", py::arithmetic())
                              SkSurfaceProps::kUnknown_SkPixelGeometry) - different constructor
  */
 
-surfaceprops
-    .def(py::init<>())
-    .def(py::init<uint32_t, SkPixelGeometry>(),
-        py::arg("flags"), py::arg("geometry"))
-/*
-    .def(py::init<SkSurfaceProps::InitType>(),
-        py::arg("initType"))
-    .def(py::init<uint32_t, SkSurfaceProps::InitType>(),
-        py::arg("flags"), py::arg("initType"))
-*/
-    .def(py::init<const SkSurfaceProps&>(),
-        py::arg("props"))
-    .def("flags", &SkSurfaceProps::flags)
-    .def("pixelGeometry", &SkSurfaceProps::pixelGeometry)
-    .def("isUseDeviceIndependentFonts",
-        &SkSurfaceProps::isUseDeviceIndependentFonts)
-    .def(py::self == py::self)
-    .def(py::self != py::self)
-/*
-    .def_readonly_static("kUseDistanceFieldFonts_Flag",
-        &SkSurfaceProps::kUseDistanceFieldFonts_Flag,
-        R"docstring(
-        Deprecated alias used by Chromium.
-
-        Will be removed.
-        )docstring")
-*/
-    ;
-
-py::class_<GrSurfaceCharacterization>(m, "SurfaceCharacterization")
-    .def(py::init())
-    .def("createResized", &GrSurfaceCharacterization::createResized,
-        py::arg("width"), py::arg("height"))
-    .def("createColorSpace", &GrSurfaceCharacterization::createColorSpace,
-        py::arg("cs"))
-    .def("createBackendFormat", &GrSurfaceCharacterization::createBackendFormat,
-        py::arg("colorType"), py::arg("backendFormat"))
-    .def("createFBO0", &GrSurfaceCharacterization::createFBO0,
-        py::arg("usesGLFBO0"))
-    .def(py::self == py::self)
-    .def(py::self != py::self)
-    .def("cacheMaxResourceBytes",
-        &GrSurfaceCharacterization::cacheMaxResourceBytes)
-    .def("isValid", &GrSurfaceCharacterization::isValid)
-    .def("width", &GrSurfaceCharacterization::width)
-    .def("height", &GrSurfaceCharacterization::height)
-/*
-    #if !SK_SUPPORT_GPU
-    .def("stencilCount", &GrSurfaceCharacterization::stencilCount)
-    #endif
-*/
-    .def("isTextureable", &GrSurfaceCharacterization::isTextureable)
-    .def("isMipMapped", &GrSurfaceCharacterization::isMipMapped)
-    .def("usesGLFBO0", &GrSurfaceCharacterization::usesGLFBO0)
-    .def("vulkanSecondaryCBCompatible",
-        &GrSurfaceCharacterization::vulkanSecondaryCBCompatible)
-    .def("colorSpace", &GrSurfaceCharacterization::colorSpace,
-        py::return_value_policy::reference_internal)
-    .def("refColorSpace", &GrSurfaceCharacterization::refColorSpace)
-    .def("surfaceProps", &GrSurfaceCharacterization::surfaceProps)
-    ;
+py::class_<GrSurfaceCharacterization>(m, "SurfaceCharacterization");
 
 py::class_<SkSurface, sk_sp<SkSurface>, SkRefCnt> surface(
     m, "Surface", py::buffer_protocol(), R"docstring(
@@ -168,11 +108,7 @@ py::class_<SkSurface, sk_sp<SkSurface>, SkRefCnt> surface(
 py::class_<SkSurface::AsyncReadResult>(surface, "AsyncReadResult", R"docstring(
     The result from :py:meth:`Surface.asyncRescaleAndReadPixels` or
     :py:meth:`Surface.asyncRescaleAndReadPixelsYUV420`.
-    )docstring")
-    .def("count", &SkSurface::AsyncReadResult::count)
-    .def("data", &SkSurface::AsyncReadResult::data, py::arg("i"))
-    .def("rowBytes", &SkSurface::AsyncReadResult::rowBytes, py::arg("i"))
-    ;
+    )docstring");
 
 py::enum_<SkSurface::ContentChangeMode>(surface, "ContentChangeMode")
     .value("kDiscard_ContentChangeMode",
@@ -210,6 +146,84 @@ py::enum_<SkSurfaces::BackendSurfaceAccess>(surface, "BackendSurfaceAccess")
     .value("kPresent", SkSurfaces::BackendSurfaceAccess::kPresent,
         "back-end surface will be used for presenting to screen")
     .export_values();
+}
+
+void initSurfaceDefinitions(py::module &m) {
+auto surfaceprops = static_cast<py::class_<SkSurfaceProps>>(m.attr("SurfaceProps"));
+surfaceprops
+    .def(py::init<>())
+    .def(py::init<uint32_t, SkPixelGeometry>(),
+        py::arg("flags"), py::arg("geometry"))
+/*
+    .def(py::init<SkSurfaceProps::InitType>(),
+        py::arg("initType"))
+    .def(py::init<uint32_t, SkSurfaceProps::InitType>(),
+        py::arg("flags"), py::arg("initType"))
+*/
+    .def(py::init<const SkSurfaceProps&>(),
+        py::arg("props"))
+    .def("flags", &SkSurfaceProps::flags)
+    .def("pixelGeometry", &SkSurfaceProps::pixelGeometry)
+    .def("isUseDeviceIndependentFonts",
+        &SkSurfaceProps::isUseDeviceIndependentFonts)
+    .def(py::self == py::self)
+    .def(py::self != py::self)
+/*
+    .def_readonly_static("kUseDistanceFieldFonts_Flag",
+        &SkSurfaceProps::kUseDistanceFieldFonts_Flag,
+        R"docstring(
+        Deprecated alias used by Chromium.
+
+        Will be removed.
+        )docstring")
+*/
+    ;
+
+auto surfacecharacterization = static_cast<py::class_<GrSurfaceCharacterization>>(
+    m.attr("SurfaceCharacterization"));
+surfacecharacterization
+    .def(py::init())
+    .def("createResized", &GrSurfaceCharacterization::createResized,
+        py::arg("width"), py::arg("height"))
+    .def("createColorSpace", &GrSurfaceCharacterization::createColorSpace,
+        py::arg("cs"))
+    .def("createBackendFormat", &GrSurfaceCharacterization::createBackendFormat,
+        py::arg("colorType"), py::arg("backendFormat"))
+    .def("createFBO0", &GrSurfaceCharacterization::createFBO0,
+        py::arg("usesGLFBO0"))
+    .def(py::self == py::self)
+    .def(py::self != py::self)
+    .def("cacheMaxResourceBytes",
+        &GrSurfaceCharacterization::cacheMaxResourceBytes)
+    .def("isValid", &GrSurfaceCharacterization::isValid)
+    .def("width", &GrSurfaceCharacterization::width)
+    .def("height", &GrSurfaceCharacterization::height)
+/*
+    #if !SK_SUPPORT_GPU
+    .def("stencilCount", &GrSurfaceCharacterization::stencilCount)
+    #endif
+*/
+    .def("isTextureable", &GrSurfaceCharacterization::isTextureable)
+    .def("isMipMapped", &GrSurfaceCharacterization::isMipMapped)
+    .def("usesGLFBO0", &GrSurfaceCharacterization::usesGLFBO0)
+    .def("vulkanSecondaryCBCompatible",
+        &GrSurfaceCharacterization::vulkanSecondaryCBCompatible)
+    .def("colorSpace", &GrSurfaceCharacterization::colorSpace,
+        py::return_value_policy::reference_internal)
+    .def("refColorSpace", &GrSurfaceCharacterization::refColorSpace)
+    .def("surfaceProps", &GrSurfaceCharacterization::surfaceProps)
+    ;
+
+auto surface = static_cast<py::class_<SkSurface, sk_sp<SkSurface>, SkRefCnt>>(
+    m.attr("Surface"));
+
+auto asyncreadresult = static_cast<py::class_<SkSurface::AsyncReadResult>>(
+    surface.attr("AsyncReadResult"));
+asyncreadresult
+    .def("count", &SkSurface::AsyncReadResult::count)
+    .def("data", &SkSurface::AsyncReadResult::data, py::arg("i"))
+    .def("rowBytes", &SkSurface::AsyncReadResult::rowBytes, py::arg("i"))
+    ;
 
 surface
     .def("__repr__",

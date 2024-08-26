@@ -14,7 +14,7 @@ py::memoryview GetMemoryview(SkData &d, bool readonly = true) {
 template<>
 struct py::detail::has_operator_delete<SkData, void> : std::false_type {};
 
-void initData(py::module &m) {
+void initDataDeclarations(py::module &m) {
 py::class_<SkData, sk_sp<SkData>>(m, "Data", py::buffer_protocol(),
     R"docstring(
     :py:class:`Data` holds an immutable data buffer.
@@ -29,7 +29,12 @@ py::class_<SkData, sk_sp<SkData>>(m, "Data", py::buffer_protocol(),
         bytes(data)
         memoryview(data)
         np.array(data)
-    )docstring")
+    )docstring");
+}
+
+void initDataDefinitions(py::module &m) {
+auto data = static_cast<py::class_<SkData, sk_sp<SkData>>>(m.attr("Data"));
+data
     .def_buffer([] (SkData& data) {
         return py::buffer_info(
             data.writable_data(),

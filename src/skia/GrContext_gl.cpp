@@ -2,8 +2,7 @@
 #include <include/gpu/gl/GrGLTypes.h>
 #include <include/gpu/gl/GrGLInterface.h>
 
-void initGrContext_gl(py::module &m) {
-
+void initGrContext_glDeclarations(py::module &m) {
 py::enum_<GrGLFormat>(m, "GrGLFormat")
     .value("kUnknown", GrGLFormat::kUnknown)
     .value("kRGBA8", GrGLFormat::kRGBA8)
@@ -31,7 +30,17 @@ py::enum_<GrGLFormat>(m, "GrGLFormat")
     .value("kLast", GrGLFormat::kLast)
     .export_values();
 
-py::class_<GrGLTextureInfo>(m, "GrGLTextureInfo")
+py::class_<GrGLTextureInfo>(m, "GrGLTextureInfo");
+
+py::class_<GrGLFramebufferInfo>(m, "GrGLFramebufferInfo");
+
+py::class_<GrGLInterface, sk_sp<GrGLInterface>, SkRefCnt>(
+    m, "GrGLInterface");
+}
+
+void initGrContext_glDefinitions(py::module &m) {
+auto grgltextureinfo = static_cast<py::class_<GrGLTextureInfo>>(m.attr("GrGLTextureInfo"));
+grgltextureinfo
     .def(py::init<>())
     .def(py::init<GrGLenum, GrGLuint, GrGLenum>(),
         py::arg("target"), py::arg("id"), py::arg("format") = 0)
@@ -41,7 +50,9 @@ py::class_<GrGLTextureInfo>(m, "GrGLTextureInfo")
     .def("__eq__", &GrGLTextureInfo::operator==, py::is_operator())
     ;
 
-py::class_<GrGLFramebufferInfo>(m, "GrGLFramebufferInfo")
+auto grglframebufferinfo = static_cast<py::class_<GrGLFramebufferInfo>>(
+    m.attr("GrGLFramebufferInfo"));
+grglframebufferinfo
     .def(py::init<>())
     .def(py::init<GrGLuint, GrGLenum>(),
         py::arg("FBOID"), py::arg("format") = 0)
@@ -50,8 +61,9 @@ py::class_<GrGLFramebufferInfo>(m, "GrGLFramebufferInfo")
     .def("__eq__", &GrGLFramebufferInfo::operator==, py::is_operator())
     ;
 
-py::class_<GrGLInterface, sk_sp<GrGLInterface>, SkRefCnt>(
-    m, "GrGLInterface")
+auto grglinterface = static_cast<py::class_<GrGLInterface, sk_sp<GrGLInterface>,
+    SkRefCnt>>(m.attr("GrGLInterface"));
+grglinterface
     .def(py::init([] {
         sk_sp<const GrGLInterface> interface = GrGLMakeNativeInterface();
         if (!interface.get())

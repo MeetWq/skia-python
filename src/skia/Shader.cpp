@@ -8,7 +8,7 @@
 #define GET_SKSCALAR_PTR(pos) \
 ((pos.is_none()) ? nullptr : &(pos.cast<std::vector<SkScalar>>())[0])
 
-void initShader(py::module &m) {
+void initShaderDeclarations(py::module &m) {
 py::class_<SkShader, sk_sp<SkShader>, SkFlattenable> shader(
     m, "Shader", R"docstring(
     Shaders specify the source color(s) for what is being drawn.
@@ -111,6 +111,33 @@ py::enum_<SkShader::GradientType>(shader, "GradientType", R"docstring(
     .export_values();
 */
 
+py::class_<std::unique_ptr<int32_t>>(m, "Shaders");
+
+py::class_<SkGradientShader> gradientshader(m, "GradientShader");
+
+py::enum_<SkGradientShader::Flags>(gradientshader, "Flags", py::arithmetic())
+    .value("kInterpolateColorsInPremul_Flag",
+        SkGradientShader::Flags::kInterpolateColorsInPremul_Flag)
+    .export_values();
+
+py::class_<std::unique_ptr<uint32_t>>(m, "PerlinNoiseShader",
+    R"docstring(
+    :py:class:`PerlinNoiseShader` creates an image using the Perlin turbulence
+    function.
+
+    It can produce tileable noise if asked to stitch tiles and provided a tile
+    size. In order to fill a large area with repeating noise, set the
+    stitchTiles flag to true, and render exactly a single tile of noise. Without
+    this flag, the result will contain visible seams between tiles.
+
+    The algorithm used is described here:
+    http://www.w3.org/TR/SVG/filters.html#feTurbulenceElement
+    )docstring");
+}
+
+void initShaderDefinitions(py::module &m) {
+auto shader = static_cast<py::class_<SkShader, sk_sp<SkShader>, SkFlattenable>>(
+    m.attr("Shader"));
 shader
     .def("isOpaque", &SkShader::isOpaque,
         R"docstring(
@@ -168,7 +195,8 @@ shader
 */
     ;
 
-py::class_<std::unique_ptr<int32_t>>(m, "Shaders")
+auto shaders = static_cast<py::class_<std::unique_ptr<int32_t>>>(m.attr("Shaders"));
+shaders
     .def_static("Empty", &SkShaders::Empty)
     .def_static("Color", py::overload_cast<SkColor>(&SkShaders::Color),
         py::arg("color"))
@@ -201,13 +229,7 @@ py::class_<std::unique_ptr<int32_t>>(m, "Shaders")
         py::arg("t"), py::arg("dst"), py::arg("src"))
     ;
 
-py::class_<SkGradientShader> gradientshader(m, "GradientShader");
-
-py::enum_<SkGradientShader::Flags>(gradientshader, "Flags", py::arithmetic())
-    .value("kInterpolateColorsInPremul_Flag",
-        SkGradientShader::Flags::kInterpolateColorsInPremul_Flag)
-    .export_values();
-
+auto gradientshader = static_cast<py::class_<SkGradientShader>>(m.attr("GradientShader"));
 gradientshader
     .def_static("MakeLinear",
         [] (const std::vector<SkPoint>& pts, const std::vector<SkColor>& colors,
@@ -322,19 +344,9 @@ gradientshader
         py::arg("flags") = 0, py::arg("localMatrix") = nullptr)
     ;
 
-py::class_<std::unique_ptr<uint32_t>>(m, "PerlinNoiseShader",
-    R"docstring(
-    :py:class:`PerlinNoiseShader` creates an image using the Perlin turbulence
-    function.
-
-    It can produce tileable noise if asked to stitch tiles and provided a tile
-    size. In order to fill a large area with repeating noise, set the
-    stitchTiles flag to true, and render exactly a single tile of noise. Without
-    this flag, the result will contain visible seams between tiles.
-
-    The algorithm used is described here:
-    http://www.w3.org/TR/SVG/filters.html#feTurbulenceElement
-    )docstring")
+auto perlinnoiseshader = static_cast<py::class_<std::unique_ptr<uint32_t>>>(
+    m.attr("PerlinNoiseShader"));
+perlinnoiseshader
     .def_static("MakeFractalNoise", &SkShaders::MakeFractalNoise,
         R"docstring(
         This will construct Perlin noise of the given type (Fractal Noise or

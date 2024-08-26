@@ -21,7 +21,7 @@ SkRegion ApplyOp2(const A& self, const B& other) {
 
 }  // namespace
 
-void initRegion(py::module &m) {
+void initRegionDeclarations(py::module &m) {
 py::class_<SkRegion> region(m, "Region", R"docstring(
     :py:class:`Region` describes the set of pixels used to clip
     :py:class:`Canvas`.
@@ -51,7 +51,35 @@ py::class_<SkRegion> region(m, "Region", R"docstring(
 py::class_<SkRegion::Cliperator>(region, "Cliperator", R"docstring(
     Returns the sequence of rectangles, sorted along y-axis, then x-axis, that
     make up :py:class:`Region` intersected with the specified clip rectangle.
-    )docstring")
+    )docstring");
+
+py::class_<SkRegion::Iterator>(region, "Iterator", R"docstring(
+    Returns sequence of rectangles, sorted along y-axis, then x-axis, that make
+    up :py:class:`Region`.
+    )docstring");
+
+py::class_<SkRegion::Spanerator>(region, "Spanerator", R"docstring(
+    Returns the line segment ends within :py:class:`Region` that intersect a
+    horizontal line.
+    )docstring");
+
+py::enum_<SkRegion::Op>(region, "Op")
+    .value("kDifference_Op", SkRegion::Op::kDifference_Op)
+    .value("kIntersect_Op", SkRegion::Op::kIntersect_Op)
+    .value("kUnion_Op", SkRegion::Op::kUnion_Op)
+    .value("kXOR_Op", SkRegion::Op::kXOR_Op)
+    .value("kReverseDifference_Op", SkRegion::Op::kReverseDifference_Op)
+    .value("kReplace_Op", SkRegion::Op::kReplace_Op)
+    .value("kLastOp", SkRegion::Op::kLastOp)
+    .export_values();
+}
+
+void initRegionDefinitions(py::module &m) {
+auto region = static_cast<py::class_<SkRegion>>(m.attr("Region"));
+
+auto cliperator = static_cast<py::class_<SkRegion::Cliperator>>(
+    region.attr("Cliperator"));
+cliperator
     .def(py::init<const SkRegion&, const SkIRect&>(),
         R"docstring(
         Sets :py:class:`~Region.Cliperator` to return elements of
@@ -95,10 +123,9 @@ py::class_<SkRegion::Cliperator>(region, "Cliperator", R"docstring(
         })
     ;
 
-py::class_<SkRegion::Iterator>(region, "Iterator", R"docstring(
-    Returns sequence of rectangles, sorted along y-axis, then x-axis, that make
-    up :py:class:`Region`.
-    )docstring")
+auto iterator = static_cast<py::class_<SkRegion::Iterator>>(
+    region.attr("Iterator"));
+iterator
     .def(py::init<>(),
         R"docstring(
         Initializes :py:class:`~Region.Iterator` with an empty
@@ -173,10 +200,9 @@ py::class_<SkRegion::Iterator>(region, "Iterator", R"docstring(
         })
     ;
 
-py::class_<SkRegion::Spanerator>(region, "Spanerator", R"docstring(
-    Returns the line segment ends within :py:class:`Region` that intersect a
-    horizontal line.
-    )docstring")
+auto spanerator = static_cast<py::class_<SkRegion::Spanerator>>(
+    region.attr("Spanerator"));
+spanerator
     .def(py::init<const SkRegion&, int, int, int>(),
         R"docstring(
         Sets :py:class:`Region.Spanerator` to return line segments in
@@ -211,16 +237,6 @@ py::class_<SkRegion::Spanerator>(region, "Spanerator", R"docstring(
             throw py::stop_iteration();
         })
     ;
-
-py::enum_<SkRegion::Op>(region, "Op")
-    .value("kDifference_Op", SkRegion::Op::kDifference_Op)
-    .value("kIntersect_Op", SkRegion::Op::kIntersect_Op)
-    .value("kUnion_Op", SkRegion::Op::kUnion_Op)
-    .value("kXOR_Op", SkRegion::Op::kXOR_Op)
-    .value("kReverseDifference_Op", SkRegion::Op::kReverseDifference_Op)
-    .value("kReplace_Op", SkRegion::Op::kReplace_Op)
-    .value("kLastOp", SkRegion::Op::kLastOp)
-    .export_values();
 
 region
     .def(py::init<>(),

@@ -1,12 +1,37 @@
 #include "common.h"
 #include <pybind11/stl.h>
 
-void initColorSpace(py::module &m) {
+void initColorSpaceDeclarations(py::module &m) {
 // TODO: Implement skcms APIs.
 py::module skcms = m.def_submodule("cms");
 
 // TODO: Implement trc, toXYZD50, and A2B.
-py::class_<skcms_ICCProfile>(skcms, "ICCProfile")
+py::class_<skcms_ICCProfile>(skcms, "ICCProfile");
+
+py::class_<skcms_TransferFunction>(skcms, "TransferFunction",
+    R"docstring(
+    A transfer function mapping encoded values to linear values,
+    represented by this 7-parameter piecewise function:
+
+      linear = sign(encoded) *  (c*|encoded| + f)       , 0 <= |encoded| < d
+             = sign(encoded) * ((a*|encoded| + b)^g + e), d <= |encoded|
+
+    (A simple gamma transfer function sets g to gamma and a to 1.)
+    )docstring");
+
+py::class_<skcms_Matrix3x3>(skcms, "Matrix3x3",
+    R"docstring(
+    A row-major 3x3 matrix (ie vals[row][col])
+    )docstring");
+
+py::class_<SkColorSpace, sk_sp<SkColorSpace>>(m, "ColorSpace");
+}
+
+void initColorSpaceDefinitions(py::module &m) {
+auto skcms = static_cast<py::module>(m.attr("cms"));
+
+auto iccprofile = static_cast<py::class_<skcms_ICCProfile>>(skcms.attr("ICCProfile"));
+iccprofile
     .def(py::init<>())
     .def_readwrite("buffer", &skcms_ICCProfile::buffer)
     .def_readwrite("size", &skcms_ICCProfile::size)
@@ -18,16 +43,9 @@ py::class_<skcms_ICCProfile>(skcms, "ICCProfile")
     .def_readwrite("has_A2B", &skcms_ICCProfile::has_A2B)
     ;
 
-py::class_<skcms_TransferFunction>(skcms, "TransferFunction",
-    R"docstring(
-    A transfer function mapping encoded values to linear values,
-    represented by this 7-parameter piecewise function:
-
-      linear = sign(encoded) *  (c*|encoded| + f)       , 0 <= |encoded| < d
-             = sign(encoded) * ((a*|encoded| + b)^g + e), d <= |encoded|
-
-    (A simple gamma transfer function sets g to gamma and a to 1.)
-    )docstring")
+auto transferfunction = static_cast<py::class_<skcms_TransferFunction>>(
+    skcms.attr("TransferFunction"));
+transferfunction
     .def(py::init(
         [] (const std::vector<float>& v) {
             if (v.size() != 7)
@@ -37,10 +55,8 @@ py::class_<skcms_TransferFunction>(skcms, "TransferFunction",
             };
         }), py::arg("v"));
 
-py::class_<skcms_Matrix3x3>(skcms, "Matrix3x3",
-    R"docstring(
-    A row-major 3x3 matrix (ie vals[row][col])
-    )docstring")
+auto matrix3x3 = static_cast<py::class_<skcms_Matrix3x3>>(skcms.attr("Matrix3x3"));
+matrix3x3
     .def(py::init(
         [] (const std::vector<float>& v) {
             if (v.size() != 9)
@@ -52,7 +68,9 @@ py::class_<skcms_Matrix3x3>(skcms, "Matrix3x3",
             }};
         }), py::arg("v"));
 
-py::class_<SkColorSpace, sk_sp<SkColorSpace>>(m, "ColorSpace")
+auto colorspace = static_cast<py::class_<SkColorSpace, sk_sp<SkColorSpace>>>(
+    m.attr("ColorSpace"));
+colorspace
     .def("toProfile",
         [] (const SkColorSpace& colorspace) {
             std::unique_ptr<skcms_ICCProfile> profile(new skcms_ICCProfile());

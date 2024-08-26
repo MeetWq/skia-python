@@ -3,9 +3,18 @@
 #include <include/gpu/GrBackendSurface.h>
 #include <include/core/SkTextureCompressionType.h>
 
-void initGrContext_mock(py::module &m) {
+void initGrContext_mockDeclarations(py::module &m) {
+py::class_<GrMockTextureInfo>(m, "GrMockTextureInfo");
 
-py::class_<GrMockTextureInfo>(m, "GrMockTextureInfo")
+py::class_<GrMockRenderTargetInfo>(m, "GrMockRenderTargetInfo");
+
+py::class_<GrMockOptions>(m, "GrMockOptions");
+}
+
+void initGrContext_mockDefinitions(py::module &m) {
+auto grmocktextureinfo = static_cast<py::class_<GrMockTextureInfo>>(
+    m.attr("GrMockTextureInfo"));
+grmocktextureinfo
     .def(py::init<>())
     .def(py::init<GrColorType, SkTextureCompressionType, int>(),
         py::arg("colorType"), py::arg("compressionType"), py::arg("id"))
@@ -16,7 +25,9 @@ py::class_<GrMockTextureInfo>(m, "GrMockTextureInfo")
     .def("id", &GrMockTextureInfo::id)
     ;
 
-py::class_<GrMockRenderTargetInfo>(m, "GrMockRenderTargetInfo")
+auto grmockrendertargetinfo = static_cast<py::class_<GrMockRenderTargetInfo>>(
+    m.attr("GrMockRenderTargetInfo"));
+grmockrendertargetinfo
     .def(py::init<>())
     .def(py::init<GrColorType, int>(),
         py::arg("colorType"), py::arg("id"))
@@ -25,7 +36,8 @@ py::class_<GrMockRenderTargetInfo>(m, "GrMockRenderTargetInfo")
     .def("colorType", &GrMockRenderTargetInfo::colorType)
     ;
 
-py::class_<GrMockOptions>(m, "GrMockOptions")
+auto grmockoptions = static_cast<py::class_<GrMockOptions>>(m.attr("GrMockOptions"));
+grmockoptions
     .def(py::init<>())
     // TODO: Implement me!
     ;
