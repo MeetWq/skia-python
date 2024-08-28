@@ -98,6 +98,7 @@ py::enum_<SkBlendModeCoeff>(m, "BlendModeCoeff", R"docstring(
         "inverse dst alpha (i.e. 1 - da)")
     .value("kCoeffCount", SkBlendModeCoeff::kCoeffCount)
     .export_values();
+
 m.def("BlendMode_AsCoeff", &SkBlendMode_AsCoeff,
     R"docstring(
     Returns true if 'mode' is a coefficient-based blend mode (<=
