@@ -16,7 +16,7 @@
   FilterQuality.kNone_FilterQuality   -> SamplingOptions(FilterMode.kNearest, MipmapMode.kNone)
 */
 
-void initSamplingOptions(py::module& m) {
+void initSamplingOptionsDeclarations(py::module &m) {
 py::class_<SkSamplingOptions> samplingoptions(m, "SamplingOptions");
 
 py::enum_<SkFilterMode>(m, "FilterMode")
@@ -35,7 +35,14 @@ py::enum_<SkMipmapMode>(m, "MipmapMode")
         "interpolate between the two nearest levels")
     .export_values();
 
-py::class_<SkCubicResampler>(m, "CubicResampler")
+py::class_<SkCubicResampler>(m, "CubicResampler");
+}
+
+void initSamplingOptionsDefinitions(py::module &m) {
+auto samplingoptions = static_cast<py::class_<SkSamplingOptions>>(m.attr("SamplingOptions"));
+
+auto cubicresampler = static_cast<py::class_<SkCubicResampler>>(m.attr("CubicResampler"));
+cubicresampler
     .def_readwrite("B", &SkCubicResampler::B)
     .def_readwrite("C", &SkCubicResampler::C)
     .def_static("Mitchell", &SkCubicResampler::Mitchell)

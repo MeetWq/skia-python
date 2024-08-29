@@ -9,9 +9,13 @@ py::str StringToPyStr(const SkString& string) {
 }  // namespace
 
 
-void initString(py::module &m) {
+void initStringDeclarations(py::module &m) {
+py::class_<SkString>(m, "String");
+}
 
-py::class_<SkString>(m, "String")
+void initStringDefinitions(py::module &m) {
+auto string = static_cast<py::class_<SkString>>(m.attr("String"));
+string
     .def("__repr__", &StringToPyStr)
     .def("__str__", &StringToPyStr)
     .def(py::init<>())
@@ -173,5 +177,4 @@ py::class_<SkString>(m, "String")
     ;
 
 py::implicitly_convertible<py::str, SkString>();
-
 }

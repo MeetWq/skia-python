@@ -35,7 +35,7 @@ const int SkYUVAIndex::kIndexCount;
 const int SkYUVASizeInfo::kMaxCount;
 */
 
-void initPixmap(py::module &m) {
+void initPixmapDeclarations(py::module &m) {
 py::class_<SkPixmap>(m, "Pixmap",
     R"docstring(
     :py:class:`Pixmap` provides a utility to pair :py:class:`ImageInfo` with
@@ -64,7 +64,46 @@ py::class_<SkPixmap>(m, "Pixmap",
         array = skia.Pixmap(skia.ImageInfo.MakeN32Premul(100, 100), buffer)
 
     )docstring",
-    py::buffer_protocol())
+    py::buffer_protocol());
+
+py::class_<SkYUVAPixmapInfo> yuvapixmapinfo(m, "YUVAPixmapInfo",
+    R"docstring(
+    :py:class:`~skia.YUVAInfo` combined with per-plane
+    :py:class:`~skia.ColorType` and row bytes. Fully specifies the
+    :py:class:`~skia.Pixmaps` for a YUVA image without the actual pixel memory
+    and data.
+    )docstring");
+
+py::enum_<SkYUVAPixmapInfo::DataType>(yuvapixmapinfo, "DataType",
+    R"docstring(
+    Data type for Y, U, V, and possibly A channels independent of how values are
+    packed into planes.
+    )docstring")
+    .value("kUnorm8", SkYUVAPixmapInfo::DataType::kUnorm8,
+        "8 bit unsigned normalized")
+    .value("kUnorm16", SkYUVAPixmapInfo::DataType::kUnorm16,
+        "16 bit unsigned normalized")
+    .value("kFloat16", SkYUVAPixmapInfo::DataType::kFloat16,
+        "16 bit (half) floating point")
+    .value("kUnorm10_Unorm2", SkYUVAPixmapInfo::DataType::kUnorm10_Unorm2,
+        "10 bit unorm for Y, U, and V. 2 bit unorm for alpha (if present).")
+    .value("kLast", SkYUVAPixmapInfo::DataType::kLast)
+    .export_values();
+
+py::class_<SkYUVAPixmapInfo::SupportedDataTypes>(
+    yuvapixmapinfo, "SupportedDataTypes");
+
+py::class_<SkYUVAPixmaps>(m, "YUVAPixmaps",
+    R"docstring(
+    Helper to store :py:class:`Pixmap` planes as described by a
+    :py:class:`YUVAPixmapInfo`. Can be responsible for
+    allocating/freeing memory for pixmaps or use external memory.
+    )docstring");
+}
+
+void initPixmapDefinitions(py::module &m) {
+auto pixmap = static_cast<py::class_<SkPixmap>>(m.attr("Pixmap"));
+pixmap
     .def_buffer([] (SkPixmap& pixmap) {
         CHECK_NOTNULL(pixmap.addr());
         return ImageInfoToBufferInfo(
@@ -639,32 +678,10 @@ py::class_<SkPixmap>(m, "Pixmap",
         py::arg("color"), py::arg("subset") = nullptr)
     ;
 
-py::class_<SkYUVAPixmapInfo> yuvapixmapinfo(m, "YUVAPixmapInfo",
-    R"docstring(
-    :py:class:`~skia.YUVAInfo` combined with per-plane
-    :py:class:`~skia.ColorType` and row bytes. Fully specifies the
-    :py:class:`~skia.Pixmaps` for a YUVA image without the actual pixel memory
-    and data.
-    )docstring");
+auto yuvapixmapinfo = static_cast<py::class_<SkYUVAPixmapInfo>>(m.attr("YUVAPixmapInfo"));
 
-py::enum_<SkYUVAPixmapInfo::DataType>(yuvapixmapinfo, "DataType",
-    R"docstring(
-    Data type for Y, U, V, and possibly A channels independent of how values are
-    packed into planes.
-    )docstring")
-    .value("kUnorm8", SkYUVAPixmapInfo::DataType::kUnorm8,
-        "8 bit unsigned normalized")
-    .value("kUnorm16", SkYUVAPixmapInfo::DataType::kUnorm16,
-        "16 bit unsigned normalized")
-    .value("kFloat16", SkYUVAPixmapInfo::DataType::kFloat16,
-        "16 bit (half) floating point")
-    .value("kUnorm10_Unorm2", SkYUVAPixmapInfo::DataType::kUnorm10_Unorm2,
-        "10 bit unorm for Y, U, and V. 2 bit unorm for alpha (if present).")
-    .value("kLast", SkYUVAPixmapInfo::DataType::kLast)
-    .export_values();
-
-py::class_<SkYUVAPixmapInfo::SupportedDataTypes>(
-    yuvapixmapinfo, "SupportedDataTypes")
+auto supporteddatatypes = static_cast<py::class_<SkYUVAPixmapInfo::SupportedDataTypes>>(yuvapixmapinfo.attr("SupportedDataTypes"));
+supporteddatatypes
     .def(py::init<>(),
         R"docstring(
         Defaults to nothing supported.
@@ -857,13 +874,8 @@ yuvapixmapinfo
         py::arg("supportedDataTypes"))
     ;
 
-
-py::class_<SkYUVAPixmaps>(m, "YUVAPixmaps",
-    R"docstring(
-    Helper to store :py:class:`Pixmap` planes as described by a
-    :py:class:`YUVAPixmapInfo`. Can be responsible for
-    allocating/freeing memory for pixmaps or use external memory.
-    )docstring")
+auto yuvapixmaps = static_cast<py::class_<SkYUVAPixmaps>>(m.attr("YUVAPixmaps"));
+yuvapixmaps
     .def_static("Allocate", &SkYUVAPixmaps::Allocate,
         R"docstring(
         Allocate space for pixmaps' pixels in the :py:class:`YUVAPixmaps`.
@@ -1045,5 +1057,4 @@ py::class_<SkYUVASizeInfo>(m, "YUVASizeInfo")
     // .def("computePlanes", &SkYUVASizeInfo)
     ;
 */
-
 }

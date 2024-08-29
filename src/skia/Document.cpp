@@ -52,8 +52,7 @@ SkPDF::Metadata DictToMetadata(py::dict dict) {
 
 }
 
-void initDocument(py::module &m) {
-
+void initDocumentDeclarations(py::module &m) {
 py::class_<SkDocument, sk_sp<SkDocument>, SkRefCnt>(m, "Document",
     R"docstring(
     High-level API for creating a document-based canvas.
@@ -76,7 +75,31 @@ py::class_<SkDocument, sk_sp<SkDocument>, SkRefCnt>(m, "Document",
             with document.page(480, 640) as canvas:
                 draw(canvas)
 
-    )docstring")
+    )docstring");
+
+py::class_<PyAutoDocumentPage>(m, "_AutoDocumentPage");
+
+py::class_<PyPDF> pdf(m, "PDF");
+
+py::class_<SkPDF::AttributeList>(pdf, "AttributeList");
+
+py::class_<SkPDF::StructureElementNode>(pdf, "StructureElementNode",
+    R"docstring(
+    A node in a PDF structure tree, giving a semantic representation
+    of the content.  Each node ID is associated with content
+    by passing the :py:class:`Canvas` and node ID to :py:class:`PDF.SetNodeId`
+    when drawing. NodeIDs should be unique within each tree.
+    )docstring");
+
+py::class_<SkPDF::Metadata>(pdf, "Metadata",
+    R"docstring(
+    Optional metadata to be passed into the PDF factory function.
+    )docstring");
+}
+
+void initDocumentDefinitions(py::module &m) {
+auto document = static_cast<py::class_<SkDocument, sk_sp<SkDocument>, SkRefCnt>>(m.attr("Document"));
+document
     .def("__enter__",
         [] (const SkDocument* document) { return document; })
     .def("__exit__",
@@ -123,7 +146,8 @@ py::class_<SkDocument, sk_sp<SkDocument>, SkRefCnt>(m, "Document",
         )docstring")
     ;
 
-py::class_<PyAutoDocumentPage>(m, "_AutoDocumentPage")
+auto _autodocumentpage = static_cast<py::class_<PyAutoDocumentPage>>(m.attr("_AutoDocumentPage"));
+_autodocumentpage
     .def("__enter__",
         [] (PyAutoDocumentPage& page) { return page.beginPage(); },
         py::return_value_policy::reference_internal)
@@ -132,7 +156,7 @@ py::class_<PyAutoDocumentPage>(m, "_AutoDocumentPage")
             py::object traceback) { page.endPage(); })
     ;
 
-py::class_<PyPDF> pdf(m, "PDF");
+auto pdf = static_cast<py::class_<PyPDF>>(m.attr("PDF"));
 
 /*
 py::enum_<SkPDF::DocumentStructureType>(pdf, "DocumentStructureType")
@@ -188,7 +212,8 @@ py::enum_<SkPDF::DocumentStructureType>(pdf, "DocumentStructureType")
     .export_values();
 */
 
-py::class_<SkPDF::AttributeList>(pdf, "AttributeList")
+auto attributelist = static_cast<py::class_<SkPDF::AttributeList>>(pdf.attr("AttributeList"));
+attributelist
     .def(py::init<>())
     .def("appendInt", &SkPDF::AttributeList::appendInt,
         py::arg("owner"), py::arg("name"), py::arg("value"))
@@ -202,13 +227,8 @@ py::class_<SkPDF::AttributeList>(pdf, "AttributeList")
         py::arg("owner"), py::arg("name"), py::arg("value"))
     ;
 
-py::class_<SkPDF::StructureElementNode>(pdf, "StructureElementNode",
-    R"docstring(
-    A node in a PDF structure tree, giving a semantic representation
-    of the content.  Each node ID is associated with content
-    by passing the :py:class:`Canvas` and node ID to :py:class:`PDF.SetNodeId`
-    when drawing. NodeIDs should be unique within each tree.
-    )docstring")
+auto structureelementnode = static_cast<py::class_<SkPDF::StructureElementNode>>(pdf.attr("StructureElementNode"));
+structureelementnode
     .def(py::init<>())
     .def_readwrite("fTypeString",
         &SkPDF::StructureElementNode::fTypeString)
@@ -226,10 +246,8 @@ py::class_<SkPDF::StructureElementNode>(pdf, "StructureElementNode",
         &SkPDF::StructureElementNode::fLang)
     ;
 
-py::class_<SkPDF::Metadata>(pdf, "Metadata",
-    R"docstring(
-    Optional metadata to be passed into the PDF factory function.
-    )docstring")
+auto metadata = static_cast<py::class_<SkPDF::Metadata>>(pdf.attr("Metadata"));
+metadata
     .def(py::init<>())
     .def(py::init(&DictToMetadata))
     .def_readwrite("fTitle", &SkPDF::Metadata::fTitle,
@@ -367,5 +385,4 @@ pdf
             return SkPDF::MakeDocument(stream, DictToMetadata(kwargs));
         },
         py::arg("stream"));
-
 }  // initDocument

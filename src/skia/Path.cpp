@@ -49,7 +49,7 @@ py::tuple Iter___next__(T& it) {
 
 }  // namespace
 
-void initPath(py::module &m) {
+void initPathDeclarations(py::module &m) {
 // PathTypes
 py::enum_<SkPathFillType>(m, "PathFillType")
     .value("kWinding", SkPathFillType::kWinding,
@@ -93,12 +93,6 @@ py::enum_<SkPathVerb>(m, "PathVerb", py::arithmetic())
         "iter.next returns 1 point (contour's moveTo pt)")
     .export_values();
 
-m.def("PathFillType_IsEvenOdd", &SkPathFillType_IsEvenOdd, py::arg("ft"));
-m.def("PathFillType_IsInverse", &SkPathFillType_IsInverse, py::arg("ft"));
-m.def("PathFillType_ConvertToNonInverse", &SkPathFillType_ConvertToNonInverse,
-    py::arg("ft"));
-
-
 py::enum_<SkPathOp>(m, "PathOp", R"docstring(
     The logical operations that can be performed when combining two paths.
     )docstring")
@@ -118,7 +112,6 @@ py::enum_<SkPathOp>(m, "PathOp", R"docstring(
         SkPathOp::kReverseDifference_SkPathOp,
         "subtract the first path from the op path")
     .export_values();
-
 
 // Path
 py::class_<SkPath> path(m, "Path", R"docstring(
@@ -200,7 +193,45 @@ py::class_<SkPath::Iter>(path, "Iter", R"docstring(
             print(points)
             print(it.conicWeight())
             verb, points = it.next()
-    )docstring")
+    )docstring");
+
+py::class_<SkPath::RawIter>(path, "RawIter", R"docstring(
+    Iterates through verb array, and associated :py:class:`Point` array and
+    conic weight.
+
+    verb array, :py:class:`Point` array, and conic weight are returned
+    unaltered.
+    )docstring");
+
+// OpBuilder
+py::class_<SkOpBuilder>(m, "OpBuilder", R"docstring(
+Perform a series of path operations, optimized for unioning many paths together.
+)docstring");
+
+py::class_<SkPathBuilder> PathBuilder(m, "PathBuilder");
+
+py::enum_<SkPathBuilder::ArcSize>(PathBuilder, "ArcSize")
+    .value("kSmall_ArcSize", SkPathBuilder::kSmall_ArcSize,
+        R"docstring(
+        smaller of arc pair
+        )docstring")
+    .value("kLarge_ArcSize", SkPathBuilder::kLarge_ArcSize,
+        R"docstring(
+        larger of arc pair
+        )docstring")
+    .export_values();
+}
+
+void initPathDefinitions(py::module &m) {
+m.def("PathFillType_IsEvenOdd", &SkPathFillType_IsEvenOdd, py::arg("ft"));
+m.def("PathFillType_IsInverse", &SkPathFillType_IsInverse, py::arg("ft"));
+m.def("PathFillType_ConvertToNonInverse", &SkPathFillType_ConvertToNonInverse,
+    py::arg("ft"));
+
+auto path = static_cast<py::class_<SkPath>>(m.attr("Path"));
+
+auto iter = static_cast<py::class_<SkPath::Iter>>(path.attr("Iter"));
+iter
     .def(py::init(),
         R"docstring(
         Initializes :py:class:`Iter` with an empty :py:class:`Path`.
@@ -298,13 +329,8 @@ py::class_<SkPath::Iter>(path, "Iter", R"docstring(
     .def("__next__", &Iter___next__<SkPath::Iter>)
     ;
 
-py::class_<SkPath::RawIter>(path, "RawIter", R"docstring(
-    Iterates through verb array, and associated :py:class:`Point` array and
-    conic weight.
-
-    verb array, :py:class:`Point` array, and conic weight are returned
-    unaltered.
-    )docstring")
+auto rawiter = static_cast<py::class_<SkPath::RawIter>>(path.attr("RawIter"));
+rawiter
     .def(py::init(),
         R"docstring(
         Initializes :py:class:`RawIter` with an empty :py:class:`Path`.
@@ -2079,10 +2105,8 @@ path
         py::arg("other"))
     ;
 
-// OpBuilder
-py::class_<SkOpBuilder>(m, "OpBuilder", R"docstring(
-Perform a series of path operations, optimized for unioning many paths together.
-)docstring")
+auto opbuilder = static_cast<py::class_<SkOpBuilder>>(m.attr("OpBuilder"));
+opbuilder
     .def(py::init<>())
     .def("add", &SkOpBuilder::add,
         R"docstring(
@@ -2194,19 +2218,7 @@ m.def("AsWinding",
     )docstring",
     py::arg("path"));
 
-
-py::class_<SkPathBuilder> PathBuilder(m, "PathBuilder");
-
-py::enum_<SkPathBuilder::ArcSize>(PathBuilder, "ArcSize")
-    .value("kSmall_ArcSize", SkPathBuilder::kSmall_ArcSize,
-        R"docstring(
-        smaller of arc pair
-        )docstring")
-    .value("kLarge_ArcSize", SkPathBuilder::kLarge_ArcSize,
-        R"docstring(
-        larger of arc pair
-        )docstring")
-    .export_values();
+auto PathBuilder = static_cast<py::class_<SkPathBuilder>>(m.attr("PathBuilder"));
 
 PathBuilder
     .def(py::init<>())

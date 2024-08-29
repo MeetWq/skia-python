@@ -28,19 +28,7 @@ void PyReadPixelsCallback (
 const SkSurfaceProps::Flags SkSurfaceProps::kUseDistanceFieldFonts_Flag;
 */
 
-void initSurface(py::module &m) {
-
-/* m111: SkBackingFit is no longer part of the public API. */
-/*
-py::enum_<SkBackingFit>(m, "BackingFit", R"docstring(
-    Indicates whether a backing store needs to be an exact match or can be
-    larger than is strictly necessary.
-    )docstring")
-    .value("kApprox", SkBackingFit::kApprox)
-    .value("kExact", SkBackingFit::kExact)
-    .export_values();
-*/
-
+void initSurfaceDeclarations(py::module &m) {
 py::enum_<SkPixelGeometry>(m, "PixelGeometry", R"docstring(
     Description of how the LCD strips are arranged for each pixel.
 
@@ -70,6 +58,87 @@ py::enum_<SkSurfaceProps::Flags>(surfaceprops, "Flags", py::arithmetic())
     .value("kAlwaysDither_Flag",
         SkSurfaceProps::Flags::kAlwaysDither_Flag)
     .export_values();
+
+py::class_<GrSurfaceCharacterization>(m, "SurfaceCharacterization");
+
+py::class_<SkSurface, sk_sp<SkSurface>, SkRefCnt> surface(
+    m, "Surface", py::buffer_protocol(), R"docstring(
+    :py:class:`Surface` is responsible for managing the pixels that a canvas
+    draws into.
+
+    The pixels can be allocated either in CPU memory (a raster surface) or on
+    the GPU (a GrRenderTarget surface). :py:class:`Surface` takes care of
+    allocating a :py:class:`Canvas` that will draw into the surface. Call
+    :py:meth:`getCanvas` to use that canvas (but don't delete it, it is owned
+    by the surface). :py:class:`Surface` always has non-zero dimensions. If
+    there is a request for a new surface, and either of the requested dimensions
+    are zero, then nullptr will be returned.
+
+    Example::
+
+        surface = skia.Surface(640, 480)
+        with surface as canvas:
+            draw(canvas)
+        image = surface.makeImageSnapshot()
+
+    )docstring");
+
+py::class_<SkSurface::AsyncReadResult>(surface, "AsyncReadResult", R"docstring(
+    The result from :py:meth:`Surface.asyncRescaleAndReadPixels` or
+    :py:meth:`Surface.asyncRescaleAndReadPixelsYUV420`.
+    )docstring");
+
+py::enum_<SkSurface::ContentChangeMode>(surface, "ContentChangeMode")
+    .value("kDiscard_ContentChangeMode",
+        SkSurface::ContentChangeMode::kDiscard_ContentChangeMode,
+        "discards surface on change")
+    .value("kRetain_ContentChangeMode",
+        SkSurface::ContentChangeMode::kRetain_ContentChangeMode,
+        "preserves surface on change")
+    .export_values();
+
+py::enum_<SkSurfaces::BackendHandleAccess>(surface, "BackendHandleAccess")
+    .value("kFlushRead_BackendHandleAccess",
+        SkSurfaces::BackendHandleAccess::kFlushRead,
+        "back-end object is readable")
+    .value("kFlushWrite_BackendHandleAccess",
+        SkSurfaces::BackendHandleAccess::kFlushWrite,
+        "back-end object is writable")
+    .value("kDiscardWrite_BackendHandleAccess",
+        SkSurfaces::BackendHandleAccess::kDiscardWrite,
+        "back-end object must be overwritten")
+    .export_values();
+
+py::enum_<SkSurface::RescaleGamma>(surface, "RescaleGamma", R"docstring(
+    Controls the gamma that rescaling occurs in for
+    :py:meth:`Surface.asyncRescaleAndReadPixels` and
+    :py:meth:`Surface.asyncRescaleAndReadPixelsYUV420`.
+    )docstring", py::arithmetic())
+    .value("kSrc", SkSurface::RescaleGamma::kSrc)
+    .value("kLinear", SkSurface::RescaleGamma::kLinear)
+    .export_values();
+
+py::enum_<SkSurfaces::BackendSurfaceAccess>(surface, "BackendSurfaceAccess")
+    .value("kNoAccess", SkSurfaces::BackendSurfaceAccess::kNoAccess,
+        "back-end object will not be used by client")
+    .value("kPresent", SkSurfaces::BackendSurfaceAccess::kPresent,
+        "back-end surface will be used for presenting to screen")
+    .export_values();
+}
+
+void initSurfaceDefinitions(py::module &m) {
+/* m111: SkBackingFit is no longer part of the public API. */
+/*
+py::enum_<SkBackingFit>(m, "BackingFit", R"docstring(
+    Indicates whether a backing store needs to be an exact match or can be
+    larger than is strictly necessary.
+    )docstring")
+    .value("kApprox", SkBackingFit::kApprox)
+    .value("kExact", SkBackingFit::kExact)
+    .export_values();
+*/
+
+auto surfaceprops = static_cast<py::class_<SkSurfaceProps>>(m.attr("SurfaceProps"));
 
 /* SkSurfaceProps::kLegacyFontHost_InitType was removed in m88.
    Its usage was replaced by:
@@ -110,7 +179,8 @@ surfaceprops
 */
     ;
 
-py::class_<GrSurfaceCharacterization>(m, "SurfaceCharacterization")
+auto surfacecharacterization = static_cast<py::class_<GrSurfaceCharacterization>>(m.attr("SurfaceCharacterization"));
+surfacecharacterization
     .def(py::init())
     .def("createResized", &GrSurfaceCharacterization::createResized,
         py::arg("width"), py::arg("height"))
@@ -143,73 +213,14 @@ py::class_<GrSurfaceCharacterization>(m, "SurfaceCharacterization")
     .def("surfaceProps", &GrSurfaceCharacterization::surfaceProps)
     ;
 
-py::class_<SkSurface, sk_sp<SkSurface>, SkRefCnt> surface(
-    m, "Surface", py::buffer_protocol(), R"docstring(
-    :py:class:`Surface` is responsible for managing the pixels that a canvas
-    draws into.
+auto surface = static_cast<py::class_<SkSurface, sk_sp<SkSurface>, SkRefCnt>>(m.attr("Surface"));
 
-    The pixels can be allocated either in CPU memory (a raster surface) or on
-    the GPU (a GrRenderTarget surface). :py:class:`Surface` takes care of
-    allocating a :py:class:`Canvas` that will draw into the surface. Call
-    :py:meth:`getCanvas` to use that canvas (but don't delete it, it is owned
-    by the surface). :py:class:`Surface` always has non-zero dimensions. If
-    there is a request for a new surface, and either of the requested dimensions
-    are zero, then nullptr will be returned.
-
-    Example::
-
-        surface = skia.Surface(640, 480)
-        with surface as canvas:
-            draw(canvas)
-        image = surface.makeImageSnapshot()
-
-    )docstring");
-
-py::class_<SkSurface::AsyncReadResult>(surface, "AsyncReadResult", R"docstring(
-    The result from :py:meth:`Surface.asyncRescaleAndReadPixels` or
-    :py:meth:`Surface.asyncRescaleAndReadPixelsYUV420`.
-    )docstring")
+auto asyncreadresult = static_cast<py::class_<SkSurface::AsyncReadResult>>(surface.attr("AsyncReadResult"));
+asyncreadresult
     .def("count", &SkSurface::AsyncReadResult::count)
     .def("data", &SkSurface::AsyncReadResult::data, py::arg("i"))
     .def("rowBytes", &SkSurface::AsyncReadResult::rowBytes, py::arg("i"))
     ;
-
-py::enum_<SkSurface::ContentChangeMode>(surface, "ContentChangeMode")
-    .value("kDiscard_ContentChangeMode",
-        SkSurface::ContentChangeMode::kDiscard_ContentChangeMode,
-        "discards surface on change")
-    .value("kRetain_ContentChangeMode",
-        SkSurface::ContentChangeMode::kRetain_ContentChangeMode,
-        "preserves surface on change")
-    .export_values();
-
-py::enum_<SkSurfaces::BackendHandleAccess>(surface, "BackendHandleAccess")
-    .value("kFlushRead_BackendHandleAccess",
-        SkSurfaces::BackendHandleAccess::kFlushRead,
-        "back-end object is readable")
-    .value("kFlushWrite_BackendHandleAccess",
-        SkSurfaces::BackendHandleAccess::kFlushWrite,
-        "back-end object is writable")
-    .value("kDiscardWrite_BackendHandleAccess",
-        SkSurfaces::BackendHandleAccess::kDiscardWrite,
-        "back-end object must be overwritten")
-    .export_values();
-
-py::enum_<SkSurface::RescaleGamma>(surface, "RescaleGamma", R"docstring(
-    Controls the gamma that rescaling occurs in for
-    :py:meth:`Surface.asyncRescaleAndReadPixels` and
-    :py:meth:`Surface.asyncRescaleAndReadPixelsYUV420`.
-    )docstring", py::arithmetic())
-    .value("kSrc", SkSurface::RescaleGamma::kSrc)
-    .value("kLinear", SkSurface::RescaleGamma::kLinear)
-    .export_values();
-
-py::enum_<SkSurfaces::BackendSurfaceAccess>(surface, "BackendSurfaceAccess")
-    .value("kNoAccess", SkSurfaces::BackendSurfaceAccess::kNoAccess,
-        "back-end object will not be used by client")
-    .value("kPresent", SkSurfaces::BackendSurfaceAccess::kPresent,
-        "back-end surface will be used for presenting to screen")
-    .export_values();
 
 surface
     .def("__repr__",

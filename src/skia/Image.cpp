@@ -181,31 +181,13 @@ sk_sp<SkImage> ImageResize(
 
 }  // namespace
 
-void initImage(py::module &m) {
+void initImageDeclarations(py::module &m) {
 py::enum_<skgpu::Budgeted>(m, "Budgeted", R"docstring(
     Indicates whether an allocation should count against a cache budget.
     )docstring")
     .value("kNo", skgpu::Budgeted::kNo)
     .value("kYes", skgpu::Budgeted::kYes)
     .export_values();
-
-/*
-py::enum_<SkFilterQuality>(m, "FilterQuality",
-    R"docstring(
-    Controls how much filtering to be done when scaling/transforming complex
-    colors e.g. image.
-    )docstring")
-    .value("kNone_FilterQuality", SkFilterQuality::kNone_SkFilterQuality,
-        "fastest but lowest quality, typically nearest-neighbor")
-    .value("kLow_FilterQuality", SkFilterQuality::kLow_SkFilterQuality,
-        "typically bilerp")
-    .value("kMedium_FilterQuality", SkFilterQuality::kMedium_SkFilterQuality,
-        "typically bilerp + mipmaps for down-scaling")
-    .value("kHigh_FilterQuality", SkFilterQuality::kHigh_SkFilterQuality,
-        "slowest but highest quality, typically bicubic or better")
-    .value("kLast_FilterQuality", SkFilterQuality::kLast_SkFilterQuality)
-    .export_values();
-*/
 
 py::enum_<SkEncodedImageFormat>(m, "EncodedImageFormat", R"docstring(
     Enum describing format of encoded data.
@@ -224,21 +206,7 @@ py::enum_<SkEncodedImageFormat>(m, "EncodedImageFormat", R"docstring(
     .value("kHEIF", SkEncodedImageFormat::kHEIF)
     .export_values();
 
-
-py::class_<SkMipmapBuilder>(m, "MipmapBuilder")
-    .def(py::init<const SkImageInfo&>())
-    .def("countLevels", &SkMipmapBuilder::countLevels)
-    .def("level", &SkMipmapBuilder::level)
-    .def("attachTo",
-        py::overload_cast<const sk_sp<const SkImage>&>(&SkMipmapBuilder::attachTo),
-        R"docstring(
-        If these levels are compatible with src, return a new Image that
-        combines src's base level with these levels as mip levels.
-
-        If not compatible, this returns nullptr.
-        )docstring")
-    ;
-
+py::class_<SkMipmapBuilder>(m, "MipmapBuilder");
 
 py::class_<SkImage, sk_sp<SkImage>, SkRefCnt> image(m, "Image",
     R"docstring(
@@ -306,6 +274,43 @@ py::enum_<SkImage::LegacyBitmapMode>(image, "LegacyBitmapMode")
         returned bitmap is read-only and immutable
         )docstring")
     .export_values();
+}
+
+void initImageDefinitions(py::module &m) {
+/*
+py::enum_<SkFilterQuality>(m, "FilterQuality",
+    R"docstring(
+    Controls how much filtering to be done when scaling/transforming complex
+    colors e.g. image.
+    )docstring")
+    .value("kNone_FilterQuality", SkFilterQuality::kNone_SkFilterQuality,
+        "fastest but lowest quality, typically nearest-neighbor")
+    .value("kLow_FilterQuality", SkFilterQuality::kLow_SkFilterQuality,
+        "typically bilerp")
+    .value("kMedium_FilterQuality", SkFilterQuality::kMedium_SkFilterQuality,
+        "typically bilerp + mipmaps for down-scaling")
+    .value("kHigh_FilterQuality", SkFilterQuality::kHigh_SkFilterQuality,
+        "slowest but highest quality, typically bicubic or better")
+    .value("kLast_FilterQuality", SkFilterQuality::kLast_SkFilterQuality)
+    .export_values();
+*/
+
+auto mipmapbuilder = static_cast<py::class_<SkMipmapBuilder>>(m.attr("MipmapBuilder"));
+mipmapbuilder
+    .def(py::init<const SkImageInfo&>())
+    .def("countLevels", &SkMipmapBuilder::countLevels)
+    .def("level", &SkMipmapBuilder::level)
+    .def("attachTo",
+        py::overload_cast<const sk_sp<const SkImage>&>(&SkMipmapBuilder::attachTo),
+        R"docstring(
+        If these levels are compatible with src, return a new Image that
+        combines src's base level with these levels as mip levels.
+
+        If not compatible, this returns nullptr.
+        )docstring")
+    ;
+
+auto image = static_cast<py::class_<SkImage, sk_sp<SkImage>, SkRefCnt>>(m.attr("Image"));
 
 image
     // Python methods.

@@ -95,7 +95,7 @@ SkPaint MakeFromDict(py::dict dict) {
 }  // namespace
 
 
-void initPaint(py::module &m) {
+void initPaintDeclarations(py::module &m) {
 // Paint
 py::class_<SkPaint> paint(m, "Paint", R"docstring(
     :py:class:`Paint` controls options applied when drawing.
@@ -154,6 +154,34 @@ py::enum_<SkPaint::Join>(paint, "Join")
     .value("kDefault_Join", SkPaint::Join::kDefault_Join,
         "equivalent to kMiter_Join")
     .export_values();
+
+py::class_<SkFlattenable, PyFlattanable, sk_sp<SkFlattenable>, SkRefCnt>
+    flattenable(m, "Flattanable", R"docstring(
+    :py:class:`Flattenable` is the base class for objects that need to be
+    flattened into a data stream for either transport or as part of the key to
+    the font cache.
+    )docstring");
+
+py::enum_<SkFlattenable::Type>(flattenable, "Type")
+    .value("kColorFilter_Type", SkFlattenable::Type::kSkColorFilter_Type)
+    .value("kDrawable_Type", SkFlattenable::Type::kSkDrawable_Type)
+    .value("kDrawLooper_Type", SkFlattenable::Type::kSkDrawLooper_Type)
+    .value("kImageFilter_Type", SkFlattenable::Type::kSkImageFilter_Type)
+    .value("kMaskFilter_Type", SkFlattenable::Type::kSkMaskFilter_Type)
+    .value("kPathEffect_Type", SkFlattenable::Type::kSkPathEffect_Type)
+/*
+    .value("kPixelRef_Type", SkFlattenable::Type::kSkPixelRef_Type)
+    .value("kUnused_Type4", SkFlattenable::Type::kSkUnused_Type4)
+    .value("kShaderBase_Type", SkFlattenable::Type::kSkShaderBase_Type)
+    .value("kUnused_Type", SkFlattenable::Type::kSkUnused_Type)
+    .value("kUnused_Type2", SkFlattenable::Type::kSkUnused_Type2)
+    .value("kUnused_Type3", SkFlattenable::Type::kSkUnused_Type3)
+*/
+    .export_values();
+}
+
+void initPaintDefinitions(py::module &m) {
+auto paint = static_cast<py::class_<SkPaint>>(m.attr("Paint"));
 
 paint
     .def(py::init<>(),
@@ -772,29 +800,7 @@ paint
 
 py::implicitly_convertible<py::dict, SkPaint>();
 
-py::class_<SkFlattenable, PyFlattanable, sk_sp<SkFlattenable>, SkRefCnt>
-    flattenable(m, "Flattanable", R"docstring(
-    :py:class:`Flattenable` is the base class for objects that need to be
-    flattened into a data stream for either transport or as part of the key to
-    the font cache.
-    )docstring");
-
-py::enum_<SkFlattenable::Type>(flattenable, "Type")
-    .value("kColorFilter_Type", SkFlattenable::Type::kSkColorFilter_Type)
-    .value("kDrawable_Type", SkFlattenable::Type::kSkDrawable_Type)
-    .value("kDrawLooper_Type", SkFlattenable::Type::kSkDrawLooper_Type)
-    .value("kImageFilter_Type", SkFlattenable::Type::kSkImageFilter_Type)
-    .value("kMaskFilter_Type", SkFlattenable::Type::kSkMaskFilter_Type)
-    .value("kPathEffect_Type", SkFlattenable::Type::kSkPathEffect_Type)
-/*
-    .value("kPixelRef_Type", SkFlattenable::Type::kSkPixelRef_Type)
-    .value("kUnused_Type4", SkFlattenable::Type::kSkUnused_Type4)
-    .value("kShaderBase_Type", SkFlattenable::Type::kSkShaderBase_Type)
-    .value("kUnused_Type", SkFlattenable::Type::kSkUnused_Type)
-    .value("kUnused_Type2", SkFlattenable::Type::kSkUnused_Type2)
-    .value("kUnused_Type3", SkFlattenable::Type::kSkUnused_Type3)
-*/
-    .export_values();
+auto flattenable = static_cast<py::class_<SkFlattenable, PyFlattanable, sk_sp<SkFlattenable>, SkRefCnt>>(m.attr("Flattanable"));
 
 flattenable
     // .def("getFactory", &SkFlattenable::getFactory)

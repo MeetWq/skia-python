@@ -1,8 +1,16 @@
 #include "common.h"
 
-void initSize(py::module &m) {
+void initSizeDeclarations(py::module &m) {
 // ISize
-py::class_<SkISize>(m, "ISize")
+py::class_<SkISize>(m, "ISize");
+
+// Size
+py::class_<SkSize>(m, "Size");
+}
+
+void initSizeDefinitions(py::module &m) {
+auto isize = static_cast<py::class_<SkISize>>(m.attr("ISize"));
+isize
     .def(py::init(&SkISize::MakeEmpty))
     .def(py::init(&SkISize::Make), py::arg("width"), py::arg("height"))
     .def(py::init(
@@ -57,8 +65,8 @@ py::class_<SkISize>(m, "ISize")
 
 py::implicitly_convertible<py::tuple, SkISize>();
 
-// Size
-py::class_<SkSize>(m, "Size")
+auto size = static_cast<py::class_<SkSize>>(m.attr("Size"));
+size
     .def(py::init(&SkSize::MakeEmpty))
     .def(py::init(py::overload_cast<SkScalar, SkScalar>(&SkSize::Make)),
         py::arg("width"), py::arg("height"))

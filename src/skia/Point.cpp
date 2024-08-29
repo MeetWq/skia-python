@@ -2,7 +2,7 @@
 #include <include/core/SkPoint3.h>
 #include <pybind11/operators.h>
 
-void initPoint(py::module &m) {
+void initPointDeclarations(py::module &m) {
 // IPoint
 py::class_<SkIPoint>(m, "IPoint", R"docstring(
     :py:class:`IPoint` holds two 32-bit integer coordinates.
@@ -15,7 +15,40 @@ py::class_<SkIPoint>(m, "IPoint", R"docstring(
         point + (1, 1)   # Add offset
         point - (0, 0)   # Subtract offset
         x, y = tuple(point)  # Convert to tuple
-    )docstring")
+    )docstring");
+
+// Point
+py::class_<SkPoint>(m, "Point", R"docstring(
+    :py:class:`Point` holds two 32-bit floating point coordinates.
+
+    Example::
+
+        point = skia.Point(0.0, 0.0)
+        point = skia.Point((0.0, 0.0))  # Convert from tuple
+        print(point.fX, point.fY)
+        point + (1, 1)   # Add offset
+        point - (0, 0)   # Subtract offset
+        point * 2.0      # Scale
+        x, y = tuple(point)  # Convert to tuple
+    )docstring");
+
+// Point3
+py::class_<SkPoint3>(m, "Point3",
+    R"docstring(
+    :py:class:`Point` holds three 32-bit floating point coordinates.
+
+    Example::
+
+        point = skia.Point3(0.0, 0.0, 0.0)
+        point = skia.Point3((0.0, 0.0, 0.0))  # Convert from tuple
+        print(point.fX, point.fY, point.fZ)
+        x, y, z = tuple(point)  # Convert to tuple
+    )docstring");
+}
+
+void initPointDefinitions(py::module &m) {
+auto ipoint = static_cast<py::class_<SkIPoint>>(m.attr("IPoint"));
+ipoint
     .def(py::init(&SkIPoint::Make),
         R"docstring(
         Sets fX to x, fY to y.
@@ -139,20 +172,8 @@ py::class_<SkIPoint>(m, "IPoint", R"docstring(
 
 py::implicitly_convertible<py::tuple, SkIPoint>();
 
-// Point
-py::class_<SkPoint>(m, "Point", R"docstring(
-    :py:class:`Point` holds two 32-bit floating point coordinates.
-
-    Example::
-
-        point = skia.Point(0.0, 0.0)
-        point = skia.Point((0.0, 0.0))  # Convert from tuple
-        print(point.fX, point.fY)
-        point + (1, 1)   # Add offset
-        point - (0, 0)   # Subtract offset
-        point * 2.0      # Scale
-        x, y = tuple(point)  # Convert to tuple
-    )docstring")
+auto point = static_cast<py::class_<SkPoint>>(m.attr("Point"));
+point
     .def(py::init(&SkPoint::Make),
         R"docstring(
         Sets fX to x, fY to y.
@@ -560,18 +581,8 @@ py::class_<SkPoint>(m, "Point", R"docstring(
 py::implicitly_convertible<py::tuple, SkPoint>();
 py::implicitly_convertible<SkIPoint, SkPoint>();
 
-// Point3
-py::class_<SkPoint3>(m, "Point3",
-    R"docstring(
-    :py:class:`Point` holds three 32-bit floating point coordinates.
-
-    Example::
-
-        point = skia.Point3(0.0, 0.0, 0.0)
-        point = skia.Point3((0.0, 0.0, 0.0))  # Convert from tuple
-        print(point.fX, point.fY, point.fZ)
-        x, y, z = tuple(point)  # Convert to tuple
-    )docstring")
+auto point3 = static_cast<py::class_<SkPoint3>>(m.attr("Point3"));
+point3
     .def(py::init(&SkPoint3::Make),
         py::arg("x"), py::arg("y"), py::arg("z"))
     .def(py::init(

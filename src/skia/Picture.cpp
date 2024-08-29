@@ -40,7 +40,7 @@ public:
 
 }  // namespace
 
-void initPicture(py::module &m) {
+void initPictureDeclarations(py::module &m) {
 py::class_<SkPicture, PyPicture, sk_sp<SkPicture>, SkRefCnt>(
     m, "Picture", R"docstring(
     :py:class:`Picture` records drawing commands made to :py:class:`Canvas`.
@@ -65,7 +65,33 @@ py::class_<SkPicture, PyPicture, sk_sp<SkPicture>, SkRefCnt>(
         canvas.clear(0xFFFFFFFF)
         canvas.drawLine(0, 0, 100, 100, skia.Paint())
         picture = recorder.finishRecordingAsPicture()
-    )docstring")
+    )docstring");
+
+py::class_<SkDrawable, sk_sp<SkDrawable>, SkFlattenable>(m, "Drawable",
+    R"docstring(
+    Base-class for objects that draw into :py:class:`Canvas`.
+
+    The object has a generation ID, which is guaranteed to be unique across all
+    drawables. To allow for clients of the drawable that may want to cache the
+    results, the drawable must change its generation ID whenever its internal
+    state changes such that it will draw differently.
+    )docstring");
+
+py::class_<SkBBHFactory>(m, "BBHFactory");
+
+py::class_<SkRTreeFactory, SkBBHFactory> rTreeFactory(m, "RTreeFactory");
+
+py::class_<SkBBoxHierarchy, PyBBoxHierarchy, sk_sp<SkBBoxHierarchy>, SkRefCnt>
+    bboxhierarchy(m, "BBoxHierarchy");
+
+py::class_<SkBBoxHierarchy::Metadata>(bboxhierarchy, "Metadata");
+
+py::class_<SkPictureRecorder> picturerecorder(m, "PictureRecorder");
+}
+
+void initPictureDefinitions(py::module &m) {
+auto picture = static_cast<py::class_<SkPicture, PyPicture, sk_sp<SkPicture>, SkRefCnt>>(m.attr("Picture"));
+picture
     .def(py::init(&SkPicture::MakePlaceholder),
         R"docstring(
         Returns a placeholder :py:class:`Picture`.
@@ -218,15 +244,8 @@ py::class_<SkPicture, PyPicture, sk_sp<SkPicture>, SkRefCnt>(
         py::arg("cull"))
     ;
 
-py::class_<SkDrawable, sk_sp<SkDrawable>, SkFlattenable>(m, "Drawable",
-    R"docstring(
-    Base-class for objects that draw into :py:class:`Canvas`.
-
-    The object has a generation ID, which is guaranteed to be unique across all
-    drawables. To allow for clients of the drawable that may want to cache the
-    results, the drawable must change its generation ID whenever its internal
-    state changes such that it will draw differently.
-    )docstring")
+auto drawable = static_cast<py::class_<SkDrawable, sk_sp<SkDrawable>, SkFlattenable>>(m.attr("Drawable"));
+drawable
     .def("draw",
         py::overload_cast<SkCanvas*, const SkMatrix*>(&SkDrawable::draw),
         R"docstring(
@@ -272,18 +291,16 @@ py::class_<SkDrawable, sk_sp<SkDrawable>, SkFlattenable>(m, "Drawable",
         )docstring")
     ;
 
-py::class_<SkBBHFactory>(m, "BBHFactory");
-
-py::class_<SkRTreeFactory, SkBBHFactory> rTreeFactory(m, "RTreeFactory");
+auto rTreeFactory = static_cast<py::class_<SkRTreeFactory, SkBBHFactory>>(m.attr("RTreeFactory"));
 
 rTreeFactory
     .def(py::init<>())
     .def("__call__", &SkBBHFactory::operator());
 
-py::class_<SkBBoxHierarchy, PyBBoxHierarchy, sk_sp<SkBBoxHierarchy>, SkRefCnt>
-    bboxhierarchy(m, "BBoxHierarchy");
+auto bboxhierarchy = static_cast<py::class_<SkBBoxHierarchy, PyBBoxHierarchy, sk_sp<SkBBoxHierarchy>, SkRefCnt>>(m.attr("BBoxHierarchy"));
 
-py::class_<SkBBoxHierarchy::Metadata>(bboxhierarchy, "Metadata")
+auto metadata = static_cast<py::class_<SkBBoxHierarchy::Metadata>>(bboxhierarchy.attr("Metadata"));
+metadata
     .def_readwrite("isDraw", &SkBBoxHierarchy::Metadata::isDraw);
 
 bboxhierarchy
@@ -310,7 +327,7 @@ bboxhierarchy
         )docstring")
     ;
 
-py::class_<SkPictureRecorder> picturerecorder(m, "PictureRecorder");
+auto picturerecorder = static_cast<py::class_<SkPictureRecorder>>(m.attr("PictureRecorder"));
 
 /* m117: Remove slug-related #ifdefs from src/core */
 /*

@@ -21,7 +21,7 @@ py::object IsColorFilterNode(const SkImageFilter& filter) {
 const int SkDropShadowImageFilter::kShadowModeCount;
 */
 
-void initImageFilter(py::module &m) {
+void initImageFilterDeclarations(py::module &m) {
 py::class_<SkImageFilter, sk_sp<SkImageFilter>, SkFlattenable> imagefilter(
     m, "ImageFilter",
     R"docstring(
@@ -67,6 +67,19 @@ py::class_<SkImageFilter, sk_sp<SkImageFilter>, SkFlattenable> imagefilter(
 
 py::class_<SkImageFilters::CropRect> croprect(imagefilter, "CropRect");
 
+py::enum_<SkImageFilter::MapDirection>(imagefilter, "MapDirection")
+    .value("kForward_MapDirection", SkImageFilter::kForward_MapDirection)
+    .value("kReverse_MapDirection", SkImageFilter::kReverse_MapDirection)
+    .export_values();
+
+py::class_<SkImageFilters>(m, "ImageFilters");
+}
+
+void initImageFilterDefinitions(py::module &m) {
+auto imagefilter = static_cast<py::class_<SkImageFilter, sk_sp<SkImageFilter>, SkFlattenable>>(m.attr("ImageFilter"));
+
+auto croprect = static_cast<py::class_<SkImageFilters::CropRect>>(imagefilter.attr("CropRect"));
+
 /*
 py::enum_<SkImageFilters::CropRect::CropEdge>(croprect, "CropEdge")
     .value("kHasLeft_CropEdge", SkImageFilters::CropRect::kHasLeft_CropEdge)
@@ -108,11 +121,6 @@ croprect
         py::arg("imageBounds"), py::arg("matrix"), py::arg("embiggen"))
 */
     ;
-
-py::enum_<SkImageFilter::MapDirection>(imagefilter, "MapDirection")
-    .value("kForward_MapDirection", SkImageFilter::kForward_MapDirection)
-    .value("kReverse_MapDirection", SkImageFilter::kReverse_MapDirection)
-    .export_values();
 
 imagefilter
     .def("filterBounds", &SkImageFilter::filterBounds,
@@ -388,7 +396,8 @@ py::class_<SkErodeImageFilter>(m, "ErodeImageFilter")
     ;
 */
 
-py::class_<SkImageFilters>(m, "ImageFilters")
+auto imagefilters = static_cast<py::class_<SkImageFilters>>(m.attr("ImageFilters"));
+imagefilters
 /* SkImageFilters::AlphaThreshold removed in m116 */
 /*
     .def_static("AlphaThreshold",
@@ -1048,7 +1057,6 @@ py::class_<SkImageFilters>(m, "ImageFilters")
         py::arg("ks"), py::arg("shininess"), py::arg("input") = nullptr,
         py::arg("cropRect") = nullptr)
     ;
-
 
 /*
 py::class_<SkLightingImageFilter>(m, "LightingImageFilter")

@@ -5,8 +5,12 @@
 #include <modules/svg/include/SkSVGRenderContext.h>
 #include <cstring>
 
-void initSVGDOM(py::module &m) {
+void initSVGDOMDeclarations(py::module &m) {
 py::class_<SkSVGDOM, sk_sp<SkSVGDOM>, SkRefCnt> SVGDOM(m, "SVGDOM");
+}
+
+void initSVGDOMDefinitions(py::module &m) {
+auto SVGDOM = static_cast<py::class_<SkSVGDOM, sk_sp<SkSVGDOM>, SkRefCnt>>(m.attr("SVGDOM"));
 
 SVGDOM
     // .def_static("MakeFromDOM", &SkSVGDOM::MakeFromDOM, py::arg("dom"))

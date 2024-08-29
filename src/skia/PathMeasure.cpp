@@ -1,6 +1,6 @@
 #include "common.h"
 
-void initPathMeasure(py::module &m) {
+void initPathMeasureDeclarations(py::module &m) {
 py::class_<SkPathMeasure> path_measure(m, "PathMeasure", R"docstring(
     :py:class:`PathMeasure`
     )docstring");
@@ -16,6 +16,10 @@ py::enum_<SkPathMeasure::MatrixFlags>(path_measure, "GetPosAndTan")
         SkPathMeasure::MatrixFlags::kGetPosAndTan_MatrixFlag,
         "get position and tangent")
     .export_values();
+}
+
+void initPathMeasureDefinitions(py::module &m) {
+auto path_measure = static_cast<py::class_<SkPathMeasure>>(m.attr("PathMeasure"));
 
 path_measure
     .def(py::init<>(),
@@ -114,5 +118,4 @@ path_measure
         client is free to modify/delete the path after this call..
         )docstring")
     ;
-
 }

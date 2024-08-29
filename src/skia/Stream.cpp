@@ -281,8 +281,7 @@ public:
 };
 
 
-void initStream(py::module &m) {
-
+void initStreamDeclarations(py::module &m) {
 py::class_<SkStream, PyStream<>>(m, "Stream",
     R"docstring(
     :py:class:`Stream` – abstraction for a source of bytes.
@@ -309,7 +308,49 @@ py::class_<SkStream, PyStream<>>(m, "Stream",
 
         ~FILEStream
         ~MemoryStream
-    )docstring")
+    )docstring");
+
+py::class_<SkStreamRewindable, PyStreamRewindable<>, SkStream>(
+    m, "StreamRewindable");
+
+py::class_<SkStreamSeekable, PyStreamSeekable<>, SkStreamRewindable>(
+    m, "StreamSeekable");
+
+py::class_<SkStreamAsset, PyStreamAsset<>, SkStreamSeekable>(
+    m, "StreamAsset");
+
+py::class_<SkStreamMemory, PyStreamMemory<>, SkStreamAsset>(
+    m, "StreamMemory");
+
+py::class_<SkWStream, PyWStream<>>(m, "WStream",
+    R"docstring(
+    .. rubric:: Subclasses
+
+    .. autosummary::
+        :nosignatures:
+
+        ~FILEWStream
+        ~DynamicMemoryWStream
+    )docstring");
+
+py::class_<SkNullWStream, PyWStreamImpl<SkNullWStream>, SkWStream>(
+    m, "NullWStream");
+
+py::class_<SkFILEStream, PyStreamImpl<SkFILEStream>, SkStreamAsset>(
+    m, "FILEStream");
+
+py::class_<SkMemoryStream, PyMemoryStream<>, SkStreamMemory>(m, "MemoryStream");
+
+py::class_<SkFILEWStream, PyWStreamImpl<SkFILEWStream>, SkWStream>(
+    m, "FILEWStream");
+
+py::class_<SkDynamicMemoryWStream, PyWStreamImpl<SkDynamicMemoryWStream>,
+    SkWStream>(m, "DynamicMemoryWStream");
+}
+
+void initStreamDefinitions(py::module &m) {
+auto stream = static_cast<py::class_<SkStream, PyStream<>>>(m.attr("Stream"));
+stream
     .def("read",
         [] (SkStream& stream, py::buffer b, size_t size) {
             auto info = b.request(true);
@@ -532,38 +573,30 @@ py::class_<SkStream, PyStream<>>(m, "Stream",
         py::arg("path"))
     ;
 
-py::class_<SkStreamRewindable, PyStreamRewindable<>, SkStream>(
-    m, "StreamRewindable")
+auto streamrewindable = static_cast<py::class_<SkStreamRewindable, PyStreamRewindable<>, SkStream>>(m.attr("StreamRewindable"));
+streamrewindable
     .def("duplicate", &SkStreamRewindable::duplicate)
     ;
 
-py::class_<SkStreamSeekable, PyStreamSeekable<>, SkStreamRewindable>(
-    m, "StreamSeekable")
+auto streamseekable = static_cast<py::class_<SkStreamSeekable, PyStreamSeekable<>, SkStreamRewindable>>(m.attr("StreamSeekable"));
+streamseekable
     .def("fork", &SkStreamSeekable::fork)
     ;
 
-py::class_<SkStreamAsset, PyStreamAsset<>, SkStreamSeekable>(
-    m, "StreamAsset")
+auto streamasset = static_cast<py::class_<SkStreamAsset, PyStreamAsset<>, SkStreamSeekable>>(m.attr("StreamAsset"));
+streamasset
     .def("duplicate", &SkStreamSeekable::duplicate)
     .def("fork", &SkStreamSeekable::fork)
     ;
 
-py::class_<SkStreamMemory, PyStreamMemory<>, SkStreamAsset>(
-    m, "StreamMemory")
+auto streammemory = static_cast<py::class_<SkStreamMemory, PyStreamMemory<>, SkStreamAsset>>(m.attr("StreamMemory"));
+streammemory
     .def("duplicate", &SkStreamSeekable::duplicate)
     .def("fork", &SkStreamSeekable::fork)
     ;
 
-py::class_<SkWStream, PyWStream<>>(m, "WStream",
-    R"docstring(
-    .. rubric:: Subclasses
-
-    .. autosummary::
-        :nosignatures:
-
-        ~FILEWStream
-        ~DynamicMemoryWStream
-    )docstring")
+auto wstream = static_cast<py::class_<SkWStream, PyWStream<>>>(m.attr("WStream"));
+wstream
     .def("write",
         [] (SkWStream& stream, py::buffer b) {
             auto info = b.request();
@@ -614,13 +647,13 @@ py::class_<SkWStream, PyWStream<>>(m, "WStream",
         py::arg("value"))
     ;
 
-py::class_<SkNullWStream, PyWStreamImpl<SkNullWStream>, SkWStream>(
-    m, "NullWStream")
+auto nullwstream = static_cast<py::class_<SkNullWStream, PyWStreamImpl<SkNullWStream>, SkWStream>>(m.attr("NullWStream"));
+nullwstream
     .def(py::init<>())
     ;
 
-py::class_<SkFILEStream, PyStreamImpl<SkFILEStream>, SkStreamAsset>(
-    m, "FILEStream")
+auto filestream = static_cast<py::class_<SkFILEStream, PyStreamImpl<SkFILEStream>, SkStreamAsset>>(m.attr("FILEStream"));
+filestream
     .def("__enter__", [] (const SkFILEStream* stream) { return stream; })
     .def("__exit__",
         [] (SkFILEStream& stream, py::object exc_type, py::object exc_value,
@@ -641,7 +674,8 @@ py::class_<SkFILEStream, PyStreamImpl<SkFILEStream>, SkStreamAsset>(
     .def("close", &SkFILEStream::close)
     ;
 
-py::class_<SkMemoryStream, PyMemoryStream<>, SkStreamMemory>(m, "MemoryStream")
+auto memorystream = static_cast<py::class_<SkMemoryStream, PyMemoryStream<>, SkStreamMemory>>(m.attr("MemoryStream"));
+memorystream
     .def(py::init<>())
     .def(py::init<size_t>(), py::arg("length"))
     .def(py::init(
@@ -689,8 +723,8 @@ py::class_<SkMemoryStream, PyMemoryStream<>, SkStreamMemory>(m, "MemoryStream")
     .def("getAtPos", &SkMemoryStream::getAtPos)
     ;
 
-py::class_<SkFILEWStream, PyWStreamImpl<SkFILEWStream>, SkWStream>(
-    m, "FILEWStream")
+auto filewstream = static_cast<py::class_<SkFILEWStream, PyWStreamImpl<SkFILEWStream>, SkWStream>>(m.attr("FILEWStream"));
+filewstream
     .def(py::init(
         [] (const std::string& path) {
             return std::unique_ptr<SkFILEWStream>(
@@ -701,8 +735,9 @@ py::class_<SkFILEWStream, PyWStreamImpl<SkFILEWStream>, SkWStream>(
     .def("fsync", &SkFILEWStream::fsync)
     ;
 
-py::class_<SkDynamicMemoryWStream, PyWStreamImpl<SkDynamicMemoryWStream>,
-    SkWStream>(m, "DynamicMemoryWStream")
+auto dynamicmemorywstream = static_cast<py::class_<SkDynamicMemoryWStream, PyWStreamImpl<SkDynamicMemoryWStream>,
+    SkWStream>>(m.attr("DynamicMemoryWStream"));
+dynamicmemorywstream
     .def(py::init<>())
     .def("read",
         [] (SkDynamicMemoryWStream& stream, py::buffer b, size_t offset) {
@@ -772,5 +807,4 @@ py::class_<SkDynamicMemoryWStream, PyWStreamImpl<SkDynamicMemoryWStream>,
     .def("reset", &SkDynamicMemoryWStream::reset)
     .def("padToAlign4", &SkDynamicMemoryWStream::padToAlign4)
     ;
-
 }

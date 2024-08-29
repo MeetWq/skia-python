@@ -4,7 +4,7 @@
 #include <algorithm>
 
 
-void initBitmap(py::module &m) {
+void initBitmapDeclarations(py::module &m) {
 py::enum_<SkTileMode>(m, "TileMode")
     .value("kClamp", SkTileMode::kClamp,
         "Replicate the edge color if the shader draws outside of its original "
@@ -81,6 +81,10 @@ py::enum_<SkBitmap::AllocFlags>(bitmap, "AllocFlags", py::arithmetic())
         zero pixel memory. No effect. This is the default.
         )docstring")
     .export_values();
+}
+
+void initBitmapDefinitions(py::module &m) {
+auto bitmap = static_cast<py::class_<SkBitmap>>(m.attr("Bitmap"));
 
 bitmap
     .def_buffer(
@@ -1031,7 +1035,6 @@ bitmap
         py::arg("tmx") = SkTileMode::kClamp,
         py::arg("tmy") = SkTileMode::kClamp, py::arg("sampling") = SkSamplingOptions(),  py::arg("localMatrix") = nullptr)
     ;
-
 
 m.def("ComputeIsOpaque", &SkBitmap::ComputeIsOpaque,
     R"docstring(

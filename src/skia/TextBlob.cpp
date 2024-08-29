@@ -8,7 +8,7 @@
 template<>
 struct py::detail::has_operator_delete<SkTextBlob, void> : std::false_type {};
 
-void initTextBlob(py::module &m) {
+void initTextBlobDeclarations(py::module &m) {
 py::class_<SkTextBlob, sk_sp<SkTextBlob>> textblob(m, "TextBlob", R"docstring(
     :py:class:`TextBlob` combines multiple text runs into an immutable
     container.
@@ -39,7 +39,20 @@ py::class_<SkTextBlob::Iter> iter(textblob, "Iter",
             print(run)
     )docstring");
 
-py::class_<SkTextBlob::Iter::Run>(iter, "Run")
+py::class_<SkTextBlob::Iter::Run>(iter, "Run");
+
+py::class_<SkTextBlobBuilder> textblobbuilder(m, "TextBlobBuilder", R"docstring(
+    Helper class for constructing :py:class:`TextBlob`.
+    )docstring");
+}
+
+void initTextBlobDefinitions(py::module &m) {
+auto textblob = static_cast<py::class_<SkTextBlob, sk_sp<SkTextBlob>>>(m.attr("TextBlob"));
+
+auto iter = static_cast<py::class_<SkTextBlob::Iter>>(textblob.attr("Iter"));
+
+auto run = static_cast<py::class_<SkTextBlob::Iter::Run>>(iter.attr("Run"));
+run
     .def(py::init<>())
     .def("__repr__",
         [] (const SkTextBlob::Iter::Run& run) {
@@ -369,9 +382,7 @@ textblob
         py::arg("data"))
     ;
 
-py::class_<SkTextBlobBuilder> textblobbuilder(m, "TextBlobBuilder", R"docstring(
-    Helper class for constructing :py:class:`TextBlob`.
-    )docstring");
+auto textblobbuilder = static_cast<py::class_<SkTextBlobBuilder>>(m.attr("TextBlobBuilder"));
 
 textblobbuilder
     .def(py::init(), "Constructs empty :py:class:`TextBlobBuilder`.")

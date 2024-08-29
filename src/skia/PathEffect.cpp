@@ -12,7 +12,7 @@
 const int SkStrokeRec::kStyleCount;
 
 
-void initPathEffect(py::module &m) {
+void initPathEffectDeclarations(py::module &m) {
 // StrokeRec
 py::class_<SkStrokeRec> strokerec(m, "StrokeRec");
 
@@ -27,6 +27,95 @@ py::enum_<SkStrokeRec::Style>(strokerec, "Style")
     .value("kStroke_Style", SkStrokeRec::Style::kStroke_Style)
     .value("kStrokeAndFill_Style", SkStrokeRec::Style::kStrokeAndFill_Style)
     .export_values();
+
+// PathEffect
+py::class_<SkPathEffect, sk_sp<SkPathEffect>, SkFlattenable>
+    patheffect(m, "PathEffect",
+    R"docstring(
+    :py:class:`PathEffect` is the base class for objects in the
+    :py:class:`Paint` that affect the geometry of a drawing primitive before it
+    is transformed by the canvas' matrix and drawn.
+
+    Dashing is implemented as a subclass of :py:class:`PathEffect`.
+
+    .. rubric:: Subclasses
+
+    .. autosummary::
+        :nosignatures:
+
+        ~skia.DiscretePathEffect
+        ~skia.DashPathEffect
+        ~skia.CornerPathEffect
+        ~skia.Line2DPathEffect
+        ~skia.Path1DPathEffect
+        ~skia.Path2DPathEffect
+        ~skia.MergePathEffect
+        ~skia.MatrixPathEffect
+        ~skia.StrokePathEffect
+        ~skia.TrimPathEffect
+    )docstring");
+
+py::class_<SkPathEffect::DashInfo>(patheffect, "DashInfo");
+
+py::enum_<SkPathEffect::DashType>(patheffect, "DashType",
+    R"docstring(
+    If the :py:class:`PathEffect` can be represented as a dash pattern, asADash
+    will return kDash_DashType and None otherwise.
+
+    If a non NULL info is passed in, the various
+    :py:class:`~PathEffect.DashInfo` will be filled in if the
+    :py:class:`PathEffect` can be a dash pattern. If passed in info has an
+    fCount equal or greater to that of the effect, it will memcpy the values of
+    the dash intervals into the info. Thus the general approach will be call
+    asADash once with default info to get DashType and fCount. If effect can be
+    represented as a dash pattern, allocate space for the intervals in info,
+    then call asADash again with the same info and the intervals will get copied
+    in.
+    )docstring")
+    .value("kNone_DashType", SkPathEffect::DashType::kNone_DashType,
+        "ignores the info parameter")
+    .value("kDash_DashType", SkPathEffect::DashType::kDash_DashType,
+        "fills in all of the info parameter")
+    .export_values();
+
+py::class_<SkDiscretePathEffect>(
+    m, "DiscretePathEffect");
+
+py::class_<SkDashPathEffect>(m, "DashPathEffect");
+
+py::class_<SkCornerPathEffect>(
+    m, "CornerPathEffect",
+    R"docstring(
+    :py:class:`CornerPathEffect` is a subclass of :py:class:`PathEffect` that
+    can turn sharp corners into various treatments (e.g. rounded corners)
+    )docstring");
+
+py::class_<SkPath1DPathEffect>
+    path1dpatheffect(m, "Path1DPathEffect");
+
+py::enum_<SkPath1DPathEffect::Style>(path1dpatheffect, "Style")
+    .value("kTranslate_Style", SkPath1DPathEffect::Style::kTranslate_Style)
+    .value("kRotate_Style", SkPath1DPathEffect::Style::kRotate_Style)
+    .value("kMorph_Style", SkPath1DPathEffect::Style::kMorph_Style)
+    .value("kLastEnum_Style", SkPath1DPathEffect::Style::kLastEnum_Style)
+    .export_values();
+
+py::class_<SkLine2DPathEffect>(
+    m, "Line2DPathEffect");
+
+py::class_<SkPath2DPathEffect>(
+    m, "Path2DPathEffect");
+
+py::class_<SkTrimPathEffect> trimpatheffect(m, "TrimPathEffect");
+
+py::enum_<SkTrimPathEffect::Mode>(trimpatheffect, "Mode")
+    .value("kNormal", SkTrimPathEffect::Mode::kNormal)
+    .value("kInverted", SkTrimPathEffect::Mode::kInverted)
+    .export_values();
+}
+
+void initPathEffectDefinitions(py::module &m) {
+auto strokerec = static_cast<py::class_<SkStrokeRec>>(m.attr("StrokeRec"));
 
 strokerec
     .def(py::init<SkStrokeRec::InitStyle>(), py::arg("style"))
@@ -110,35 +199,10 @@ strokerec
     .def_readonly_static("kStyleCount", &SkStrokeRec::kStyleCount)
     ;
 
+auto patheffect = static_cast<py::class_<SkPathEffect, sk_sp<SkPathEffect>, SkFlattenable>>(m.attr("PathEffect"));
 
-// PathEffect
-py::class_<SkPathEffect, sk_sp<SkPathEffect>, SkFlattenable>
-    patheffect(m, "PathEffect",
-    R"docstring(
-    :py:class:`PathEffect` is the base class for objects in the
-    :py:class:`Paint` that affect the geometry of a drawing primitive before it
-    is transformed by the canvas' matrix and drawn.
-
-    Dashing is implemented as a subclass of :py:class:`PathEffect`.
-
-    .. rubric:: Subclasses
-
-    .. autosummary::
-        :nosignatures:
-
-        ~skia.DiscretePathEffect
-        ~skia.DashPathEffect
-        ~skia.CornerPathEffect
-        ~skia.Line2DPathEffect
-        ~skia.Path1DPathEffect
-        ~skia.Path2DPathEffect
-        ~skia.MergePathEffect
-        ~skia.MatrixPathEffect
-        ~skia.StrokePathEffect
-        ~skia.TrimPathEffect
-    )docstring");
-
-py::class_<SkPathEffect::DashInfo>(patheffect, "DashInfo")
+auto dashinfo = static_cast<py::class_<SkPathEffect::DashInfo>>(patheffect.attr("DashInfo"));
+dashinfo
     .def(py::init<>())
     .def_property_readonly("fIntervals",
         [] (const SkPathEffect::DashInfo& info) {
@@ -194,27 +258,6 @@ pointdata
     .def_readonly("fLast", &SkPathEffect::PointData::fLast)
     ;
 */
-
-py::enum_<SkPathEffect::DashType>(patheffect, "DashType",
-    R"docstring(
-    If the :py:class:`PathEffect` can be represented as a dash pattern, asADash
-    will return kDash_DashType and None otherwise.
-
-    If a non NULL info is passed in, the various
-    :py:class:`~PathEffect.DashInfo` will be filled in if the
-    :py:class:`PathEffect` can be a dash pattern. If passed in info has an
-    fCount equal or greater to that of the effect, it will memcpy the values of
-    the dash intervals into the info. Thus the general approach will be call
-    asADash once with default info to get DashType and fCount. If effect can be
-    represented as a dash pattern, allocate space for the intervals in info,
-    then call asADash again with the same info and the intervals will get copied
-    in.
-    )docstring")
-    .value("kNone_DashType", SkPathEffect::DashType::kNone_DashType,
-        "ignores the info parameter")
-    .value("kDash_DashType", SkPathEffect::DashType::kDash_DashType,
-        "fills in all of the info parameter")
-    .export_values();
 
 patheffect
     .def("filterPath", py::overload_cast<SkPath*, const SkPath&, SkStrokeRec*, const SkRect*>(&SkPathEffect::filterPath, py::const_),
@@ -295,8 +338,8 @@ patheffect
         py::arg("data"))
     ;
 
-py::class_<SkDiscretePathEffect>(
-    m, "DiscretePathEffect")
+auto discretepatheffect = static_cast<py::class_<SkDiscretePathEffect>>(m.attr("DiscretePathEffect"));
+discretepatheffect
     .def_static("Make", &SkDiscretePathEffect::Make,
         R"docstring(
         Break the path into segments of segLength length, and randomly move the
@@ -317,7 +360,8 @@ py::class_<SkDiscretePathEffect>(
         py::arg("segLength"), py::arg("dev"), py::arg("seedAssist") = 0)
     ;
 
-py::class_<SkDashPathEffect>(m, "DashPathEffect")
+auto dashpatheffect = static_cast<py::class_<SkDashPathEffect>>(m.attr("DashPathEffect"));
+dashpatheffect
     .def_static("Make",
         [] (const std::vector<SkScalar>& intervals, SkScalar phase) {
             return SkDashPathEffect::Make(
@@ -341,12 +385,8 @@ py::class_<SkDashPathEffect>(m, "DashPathEffect")
         py::arg("intervals"), py::arg("phase"))
     ;
 
-py::class_<SkCornerPathEffect>(
-    m, "CornerPathEffect",
-    R"docstring(
-    :py:class:`CornerPathEffect` is a subclass of :py:class:`PathEffect` that
-    can turn sharp corners into various treatments (e.g. rounded corners)
-    )docstring")
+auto cornerpatheffect = static_cast<py::class_<SkCornerPathEffect>>(m.attr("CornerPathEffect"));
+cornerpatheffect
     .def_static("Make", &SkCornerPathEffect::Make,
         R"docstring(
         radius must be > 0 to have an effect.
@@ -356,15 +396,7 @@ py::class_<SkCornerPathEffect>(
         py::arg("radius"))
     ;
 
-py::class_<SkPath1DPathEffect>
-    path1dpatheffect(m, "Path1DPathEffect");
-
-py::enum_<SkPath1DPathEffect::Style>(path1dpatheffect, "Style")
-    .value("kTranslate_Style", SkPath1DPathEffect::Style::kTranslate_Style)
-    .value("kRotate_Style", SkPath1DPathEffect::Style::kRotate_Style)
-    .value("kMorph_Style", SkPath1DPathEffect::Style::kMorph_Style)
-    .value("kLastEnum_Style", SkPath1DPathEffect::Style::kLastEnum_Style)
-    .export_values();
+auto path1dpatheffect = static_cast<py::class_<SkPath1DPathEffect>>(m.attr("Path1DPathEffect"));
 
 path1dpatheffect
     .def_static("Make",
@@ -382,14 +414,14 @@ path1dpatheffect
         py::arg("path"), py::arg("advance"), py::arg("phase"), py::arg("style"))
     ;
 
-py::class_<SkLine2DPathEffect>(
-    m, "Line2DPathEffect")
+auto line2dpatheffect = static_cast<py::class_<SkLine2DPathEffect>>(m.attr("Line2DPathEffect"));
+line2dpatheffect
     .def_static("Make", &SkLine2DPathEffect::Make,
         py::arg("width"), py::arg("matrix"))
     ;
 
-py::class_<SkPath2DPathEffect>(
-    m, "Path2DPathEffect")
+auto path2dpatheffect = static_cast<py::class_<SkPath2DPathEffect>>(m.attr("Path2DPathEffect"));
+path2dpatheffect
     .def_static("Make", &SkPath2DPathEffect::Make,
         R"docstring(
         Stamp the specified path to fill the shape, using the matrix to define
@@ -424,12 +456,7 @@ py::class_<SkStrokePathEffect>(m, "StrokePathEffect")
     ;
 */
 
-py::class_<SkTrimPathEffect> trimpatheffect(m, "TrimPathEffect");
-
-py::enum_<SkTrimPathEffect::Mode>(trimpatheffect, "Mode")
-    .value("kNormal", SkTrimPathEffect::Mode::kNormal)
-    .value("kInverted", SkTrimPathEffect::Mode::kInverted)
-    .export_values();
+auto trimpatheffect = static_cast<py::class_<SkTrimPathEffect>>(m.attr("TrimPathEffect"));
 
 trimpatheffect
     .def_static("Make", &SkTrimPathEffect::Make,

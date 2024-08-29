@@ -2,27 +2,16 @@
 #include <include/gpu/vk/VulkanBackendContext.h>
 #include <include/gpu/vk/GrVkTypes.h>
 
-void initGrContext_vk(py::module &m) {
-
+void initGrContext_vkDeclarations(py::module &m) {
 py::enum_<VkFormat>(m, "VkFormat", py::arithmetic())
     .export_values();
-
-py::implicitly_convertible<int, VkFormat>();
 
 py::enum_<VkImageLayout>(m, "VkImageLayout", py::arithmetic())
     .export_values();
 
-py::implicitly_convertible<int, VkImageLayout>();
+py::class_<skgpu::VulkanAlloc>(m, "GrVkAlloc");
 
-py::class_<skgpu::VulkanAlloc>(m, "GrVkAlloc")
-    .def(py::init<>())
-    // TODO: Implement me!
-    ;
-
-py::class_<skgpu::VulkanYcbcrConversionInfo>(m, "GrVkYcbcrConversionInfo")
-    .def(py::init<>())
-    // TODO: Implement me!
-    ;
+py::class_<skgpu::VulkanYcbcrConversionInfo>(m, "GrVkYcbcrConversionInfo");
 
 py::class_<GrVkImageInfo>(m, "GrVkImageInfo",
     R"docstring(
@@ -31,7 +20,45 @@ py::class_<GrVkImageInfo>(m, "GrVkImageInfo",
     VK_QUEUE_FAMILY_EXTERNAL, or VK_QUEUE_FAMILY_FOREIGN_EXT. If fSharingMode is
     VK_SHARING_MODE_EXCLUSIVE then fCurrentQueueFamily can also be the graphics
     queue index passed into Skia.
-    )docstring")
+    )docstring");
+
+py::class_<GrVkDrawableInfo>(m, "GrVkDrawableInfo")
+    // TODO: Implement me!
+    ;
+
+py::class_<skgpu::VulkanBackendContext>(m, "GrVkBackendContext",
+    R"docstring(
+    The BackendContext contains all of the base Vulkan objects needed by the
+    GrVkGpu. The assumption is that the client will set these up and pass them
+    to the GrVkGpu constructor. The VkDevice created must support at least one
+    graphics queue, which is passed in as well. The QueueFamilyIndex must match
+    the family of the given queue. It is needed for CommandPool creation, and
+    any GrBackendObjects handed to us (e.g., for wrapped textures) needs to be
+    created in or transitioned to that family. The refs held by members of this
+    struct must be released (either by deleting the struct or manually releasing
+    the refs) before the underlying vulkan device and instance are destroyed.
+    )docstring");
+}
+
+void initGrContext_vkDefinitions(py::module &m) {
+py::implicitly_convertible<int, VkFormat>();
+
+py::implicitly_convertible<int, VkImageLayout>();
+
+auto grvkalloc = static_cast<py::class_<skgpu::VulkanAlloc>>(m.attr("GrVkAlloc"));
+grvkalloc
+    .def(py::init<>())
+    // TODO: Implement me!
+    ;
+
+auto grvkycbcrconversioninfo = static_cast<py::class_<skgpu::VulkanYcbcrConversionInfo>>(m.attr("GrVkYcbcrConversionInfo"));
+grvkycbcrconversioninfo
+    .def(py::init<>())
+    // TODO: Implement me!
+    ;
+
+auto grvkimageinfo = static_cast<py::class_<GrVkImageInfo>>(m.attr("GrVkImageInfo"));
+grvkimageinfo
     .def(py::init<>())
     // .def(py::init(
     //     [] (VkImage image,
@@ -66,10 +93,6 @@ py::class_<GrVkImageInfo>(m, "GrVkImageInfo",
     .def_readwrite("fSharingMode", &GrVkImageInfo::fSharingMode)
     ;
 
-py::class_<GrVkDrawableInfo>(m, "GrVkDrawableInfo")
-    // TODO: Implement me!
-    ;
-
 // GrVkBackendContext.h
 /* GrVkExtensionFlags & GrVkFeatureFlags removed in m127 */
 /*
@@ -100,18 +123,8 @@ py::enum_<GrVkFeatureFlags>(m, "GrVkFeatureFlags", py::arithmetic())
     .export_values();
 */
 
-py::class_<skgpu::VulkanBackendContext>(m, "GrVkBackendContext",
-    R"docstring(
-    The BackendContext contains all of the base Vulkan objects needed by the
-    GrVkGpu. The assumption is that the client will set these up and pass them
-    to the GrVkGpu constructor. The VkDevice created must support at least one
-    graphics queue, which is passed in as well. The QueueFamilyIndex must match
-    the family of the given queue. It is needed for CommandPool creation, and
-    any GrBackendObjects handed to us (e.g., for wrapped textures) needs to be
-    created in or transitioned to that family. The refs held by members of this
-    struct must be released (either by deleting the struct or manually releasing
-    the refs) before the underlying vulkan device and instance are destroyed.
-    )docstring")
+auto grvkbackendcontext = static_cast<py::class_<skgpu::VulkanBackendContext>>(m.attr("GrVkBackendContext"));
+grvkbackendcontext
     .def(py::init<>())
     // TODO: Implement me!
     ;
