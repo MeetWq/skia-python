@@ -23,9 +23,13 @@
 #include <pybind11/stl.h>
 #include <pybind11/cast.h>
 
-void initGrContext_gl(py::module&);
-void initGrContext_mock(py::module&);
-void initGrContext_vk(py::module&);
+void initGrContext_glDeclarations(py::module&);
+void initGrContext_mockDeclarations(py::module&);
+void initGrContext_vkDeclarations(py::module&);
+
+void initGrContext_glDefinitions(py::module&);
+void initGrContext_mockDefinitions(py::module&);
+void initGrContext_vkDefinitions(py::module&);
 
 void initGrContextDeclarations(py::module &m) {
 py::enum_<GrBackendApi>(m, "GrBackendApi",
@@ -253,6 +257,10 @@ py::enum_<GrPurgeResourceOptions>(m, "GrPurgeResourceOptions",
     .export_values();
 
 py::class_<GrDirectContext, sk_sp<GrDirectContext>, GrRecordingContext>(m, "GrDirectContext");
+
+initGrContext_glDeclarations(m);
+initGrContext_mockDeclarations(m);
+initGrContext_vkDeclarations(m);
 }
 
 void initGrContextDefinitions(py::module &m) {
@@ -1356,7 +1364,7 @@ m.attr("GrContext") = m.attr("GrDirectContext");
 m.attr("GrDirectContexts")       = m.attr("GrDirectContext");
 m.attr("GrBackendRenderTargets") = m.attr("GrBackendRenderTarget");
 
-initGrContext_gl(m);
-initGrContext_vk(m);
-initGrContext_mock(m);
+initGrContext_glDefinitions(m);
+initGrContext_vkDefinitions(m);
+initGrContext_mockDefinitions(m);
 }

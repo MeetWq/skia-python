@@ -3,11 +3,17 @@
 #include <pybind11/operators.h>
 
 
-void initColorFilter(py::module &);
-void initPathEffect(py::module &);
-void initShader(py::module &);
-void initMaskFilter(py::module &);
-void initImageFilter(py::module &);
+void initColorFilterDeclarations(py::module &);
+void initPathEffectDeclarations(py::module &);
+void initShaderDeclarations(py::module &);
+void initMaskFilterDeclarations(py::module &);
+void initImageFilterDeclarations(py::module &);
+
+void initColorFilterDefinitions(py::module &);
+void initPathEffectDefinitions(py::module &);
+void initShaderDefinitions(py::module &);
+void initMaskFilterDefinitions(py::module &);
+void initImageFilterDefinitions(py::module &);
 
 // Static variables must be declared.
 const int SkPaint::kStyleCount;
@@ -178,6 +184,12 @@ py::enum_<SkFlattenable::Type>(flattenable, "Type")
     .value("kUnused_Type3", SkFlattenable::Type::kSkUnused_Type3)
 */
     .export_values();
+
+initColorFilterDeclarations(m);
+initPathEffectDeclarations(m);
+initShaderDeclarations(m);
+initMaskFilterDeclarations(m);
+initImageFilterDeclarations(m);
 }
 
 void initPaintDefinitions(py::module &m) {
@@ -828,9 +840,9 @@ flattenable
         py::arg("type"), py::arg("b"))
     ;
 
-initColorFilter(m);
-initPathEffect(m);
-initShader(m);
-initMaskFilter(m);
-initImageFilter(m);
+initColorFilterDefinitions(m);
+initPathEffectDefinitions(m);
+initShaderDefinitions(m);
+initMaskFilterDefinitions(m);
+initImageFilterDefinitions(m);
 }
