@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, format_code]
   pull_request:
     branches: [main]
   release:
