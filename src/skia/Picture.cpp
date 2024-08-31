@@ -290,21 +290,30 @@ py::class_<SkBBoxHierarchy::Metadata>(bboxhierarchy, "Metadata")
 bboxhierarchy
     .def(py::init())
     .def("insert",
-        py::overload_cast<const SkRect[], int>(&SkBBoxHierarchy::insert),
+        [] (SkBBoxHierarchy& bbh, const std::vector<SkRect>& rects) {
+            return bbh.insert(rects.data(), rects.size());
+        },
         R"docstring(
         Insert N bounding boxes into the hierarchy.
         )docstring",
-        py::arg("rects"), py::arg("N"))
+        py::arg("rects"))
     .def("insert",
-        py::overload_cast<const SkRect[], const SkBBoxHierarchy::Metadata[],
-            int>(&SkBBoxHierarchy::insert),
-        py::arg("rects"), py::arg("metadata"), py::arg("N"))
-    .def("search", &SkBBoxHierarchy::search,
+        [] (SkBBoxHierarchy& bbh, const std::vector<SkRect>& rects,
+            const std::vector<SkBBoxHierarchy::Metadata>& metadata) {
+            return bbh.insert(rects.data(), metadata.data(), rects.size());
+        },
+        py::arg("rects"), py::arg("metadata"))
+    .def("search",
+        [] (SkBBoxHierarchy& bbh, const SkRect& query) {
+            std::vector<int> results;
+            bbh.search(query, &results);
+            return results;
+        },
         R"docstring(
         Populate results with the indices of bounding boxes intersecting that
         query.
         )docstring",
-        py::arg("query"), py::arg("results"))
+        py::arg("query"))
     .def("bytesUsed", &SkBBoxHierarchy::bytesUsed,
         R"docstring(
         Return approximate size in memory of this.
