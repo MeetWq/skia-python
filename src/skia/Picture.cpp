@@ -28,6 +28,8 @@ public:
 class PyBBoxHierarchy : public SkBBoxHierarchy {
 public:
     using SkBBoxHierarchy::SkBBoxHierarchy;
+
+    // https://pybind11.readthedocs.io/en/stable/advanced/classes.html#different-method-signatures
     void insert(const SkRect rects[], int N) override {
         pybind11::gil_scoped_acquire gil;
         pybind11::function override = pybind11::get_override(this, "insert");
@@ -49,8 +51,7 @@ public:
         if (override) {
             auto obj = override(query);
             if (py::isinstance<py::list>(obj)) {
-                auto results_vec = obj.cast<std::vector<int>>();
-                result = &results_vec;
+                *results = obj.cast<std::vector<int>>();
             }
         }
     }
