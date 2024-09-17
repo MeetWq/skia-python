@@ -29,10 +29,30 @@ class PyBBoxHierarchy : public SkBBoxHierarchy {
 public:
     using SkBBoxHierarchy::SkBBoxHierarchy;
     void insert(const SkRect rects[], int N) override {
-        PYBIND11_OVERRIDE_PURE(void, SkBBoxHierarchy, insert, rects, N);
+        pybind11::gil_scoped_acquire gil;
+        pybind11::function override = pybind11::get_override(this, "insert");
+        if (override) {
+            override(std::vector<SkRect>(rects, rects + N));
+        }
+    }
+    void insert(const SkRect rects[], const Metadata metadata[], int N) override {
+        pybind11::gil_scoped_acquire gil;
+        pybind11::function override = pybind11::get_override(this, "insert");
+        if (override) {
+            override(std::vector<SkRect>(rects, rects + N),
+                std::vector<Metadata>(metadata, metadata + N));
+        }
     }
     void search(const SkRect& query, std::vector<int> *results) const override {
-        PYBIND11_OVERRIDE_PURE(void, SkBBoxHierarchy, search, query, results);
+        pybind11::gil_scoped_acquire gil;
+        pybind11::function override = pybind11::get_override(this, "search");
+        if (override) {
+            auto obj = override(query);
+            if (py::isinstance<py::list>(obj)) {
+                auto results_vec = obj.cast<std::vector<int>>();
+                result = &results_vec;
+            }
+        }
     }
     size_t bytesUsed() const override {
         PYBIND11_OVERRIDE_PURE(size_t, SkBBoxHierarchy, bytesUsed);
