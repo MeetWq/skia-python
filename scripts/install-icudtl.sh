@@ -13,9 +13,10 @@
 # https://chromium.googlesource.com/chromium/deps/icu/+/364118a1d9da24bb5b770ac3d762ac144d6da5a4/version.gni
 # refers to "version.json", which says 74.
 
-python -c 'import urllib.request; urllib.request.urlretrieve("https://github.com/unicode-org/icu/releases/download/release-74-2/icu4c-74_2-data-bin-l.zip", "icudatal.zip")'
-unzip icudatal.zip
+# python -c 'import urllib.request; urllib.request.urlretrieve("https://github.com/unicode-org/icu/releases/download/release-74-2/icu4c-74_2-data-bin-l.zip", "icudatal.zip")'
+# unzip icudatal.zip
 python -c 'import sys; print(sys.path)'
 python -c 'import site; print(site.getsitepackages())'
 # site.getsitepackages()[0] does not seem to work for venv
-python -c 'import os, shutil, site; shutil.copy2("icudt74l.dat", os.path.join(site.getsitepackages()[1], "icudtl.dat"))'
+# python -c 'import os, shutil, site; shutil.copy2("icudt74l.dat", os.path.join(site.getsitepackages()[1], "icudtl.dat"))'
+python -c 'import shutil, site; shutil.copy2("skia/out/Release/icudtl.dat", site.getsitepackages()[1])'
